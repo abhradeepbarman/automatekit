@@ -15,8 +15,8 @@ importers:
         specifier: ^2.7.4
         version: 2.7.4
       typescript:
-        specifier: 5.9.2
-        version: 5.9.2
+        specifier: ^5.9.3
+        version: 5.9.3
 
   apps/executor:
     dependencies:

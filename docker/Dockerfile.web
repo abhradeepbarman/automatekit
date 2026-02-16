@@ -1,0 +1,21 @@
+FROM node:22-alpine AS builder
+
+WORKDIR /app
+
+RUN npm install -g pnpm
+
+COPY pnpm-lock.yaml pnpm-workspace.yaml turbo.json package.json ./
+COPY packages ./packages
+COPY apps/web ./apps/web
+
+RUN pnpm install --frozen-lockfile
+
+RUN pnpm turbo run build 
+
+FROM nginx:alpine
+
+COPY --from=builder /app/apps/web/dist /usr/share/nginx/html
+
+EXPOSE 80
+
+CMD ["nginx", "-g", "daemon off;"]
