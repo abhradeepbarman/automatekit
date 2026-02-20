@@ -1,15 +1,23 @@
-FROM node:22-alpine
+FROM node:20-alpine
+
+# install pnpm
+RUN npm install -g pnpm
 
 WORKDIR /app
 
-RUN npm install -g pnpm
-
+# copy workspace files
 COPY pnpm-lock.yaml pnpm-workspace.yaml turbo.json package.json ./
-COPY packages ./packages
-COPY apps/executor ./apps/executor
 
+# copy backend source
+COPY apps/executor ./apps/executor
+COPY packages ./packages
+
+# install dependencies
 RUN pnpm install --frozen-lockfile
 
-RUN pnpm turbo run build 
+# build backend
+RUN pnpm turbo run build --filter=executor
 
-CMD [ "node", "./apps/executor/dist/index.js" ]
+WORKDIR /app/apps/executor
+
+CMD ["node", "dist/index.js"]

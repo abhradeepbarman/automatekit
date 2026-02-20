@@ -1,6 +1,6 @@
-# Automatex
+# AutomateKit
 
-Automatex is a powerful workflow automation platform designed to integrate various services and execute complex workflows efficiently. It allows users to create triggers and actions to automate tasks across different applications like Gmail, Discord, and more.
+AutomateKit is a powerful workflow automation platform designed to integrate various services and execute complex workflows efficiently. It allows users to create triggers and actions to automate tasks across different applications like Gmail, Discord, and more.
 
 ## Architecture
 
@@ -45,8 +45,8 @@ Ensure you have the following installed on your machine:
 1.  Clone the repository:
 
     ```bash
-    git clone https://github.com/abhradeepbarman/automatex.git
-    cd automatex
+    git clone https://github.com/abhradeepbarman/automatekit.git
+    cd automatekit
     ```
 
 2.  Install dependencies:
@@ -57,13 +57,14 @@ Ensure you have the following installed on your machine:
 
 3.  Set up environment variables:
 
-    Copy the sample environment files and configure them with your credentials.
+    Copy the example environment files and configure them with your credentials.
 
     ```bash
-    # Root (if applicable) or individual apps
-    cp apps/server/.env.sample apps/server/.env
-    cp apps/web/.env.sample apps/web/.env
-    cp apps/executor/.env.sample apps/executor/.env
+    # Individual apps (development)
+    cp apps/server/.env.example apps/server/.env
+    cp apps/web/.env.example apps/web/.env
+    cp apps/executor/.env.example apps/executor/.env
+    cp packages/db/.env.example packages/db/.env
     ```
 
     Update the `.env` files with your database URL, Redis connection string, and other necessary secrets.
@@ -97,6 +98,40 @@ To build all apps and packages:
 ```bash
 pnpm build
 ```
+
+## Docker Deployment
+
+Use the root environment files for Docker deployments:
+
+- `.env.staging` for `docker-compose.staging.yaml`
+- `.env.prod` for `docker-compose.prod.yaml`
+
+Create them from the examples and fill in real secrets:
+
+```bash
+cp .env.staging.example .env.staging
+cp .env.prod.example .env.prod
+```
+
+Start staging:
+
+```bash
+docker compose --env-file .env.staging -f docker-compose.staging.yaml up -d --build
+```
+
+Start production:
+
+```bash
+docker compose --env-file .env.prod -f docker-compose.prod.yaml up -d --build
+```
+
+For deployment, you no longer need `apps/server/.env` or `apps/executor/.env` on the host.
+
+## Environment Hygiene
+
+- `.env.example` files are tracked; `.env` files are not.
+- Keep `.env` values out of version control and use a secrets manager in production.
+- For Docker, prefer `--env-file` with `.env.staging` or `.env.prod` rather than copying app-level `.env` files.
 
 ## Contributing
 

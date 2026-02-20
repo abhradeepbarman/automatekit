@@ -1,12 +1,15 @@
 {
-  "name": "automatex",
+  "name": "automatekit",
   "private": true,
   "scripts": {
     "build": "turbo run build",
     "dev": "turbo run dev",
     "lint": "turbo run lint",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
-    "check-types": "turbo run check-types"
+    "check-types": "turbo run check-types",
+    "clean": "bash ./scripts/cleanup-workspace.sh",
+    "docker:build:staging": "docker compose --env-file .env.staging -f docker-compose.staging.yaml build",
+    "docker:build:prod": "docker compose --env-file .env.prod -f docker-compose.prod.yaml build"
   },
   "devDependencies": {
     "prettier": "^3.7.4",

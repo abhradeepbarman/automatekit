@@ -37,7 +37,7 @@ export default function Navbar() {
           {/* Logo/Brand */}
           <div className="flex items-center gap-2">
             <h1 className="text-xl font-bold tracking-tight text-primary">
-              AutomateX
+              AutomateKit
             </h1>
           </div>
 

@@ -19,7 +19,7 @@ const Home = () => {
       <div className="relative z-10 flex max-w-2xl flex-col items-center gap-8">
         <div className="flex flex-col items-center gap-4">
           <h1 className="text-4xl font-extrabold tracking-tight sm:text-6xl md:text-7xl">
-            AutomateX
+            AutomateKit
           </h1>
           <p className="max-w-[42rem] leading-normal text-muted-foreground sm:text-xl sm:leading-8">
             Streamline your workflow with powerful automation tools. 

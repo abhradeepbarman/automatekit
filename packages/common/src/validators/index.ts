@@ -1,2 +1,2 @@
-export { registerSchema, loginSchema } from './auth.validators.js';
-export { addStepSchema, updateStepSchema } from './step.validator.js';
+export { registerSchema, loginSchema } from './auth.validators';
+export { addStepSchema, updateStepSchema } from './step.validator';

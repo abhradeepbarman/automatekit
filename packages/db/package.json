@@ -2,8 +2,9 @@
   "name": "@repo/db",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "dist/index.js",
   "scripts": {
+    "build": "tsc",
     "db:generate": "npx drizzle-kit --config src/drizzle.config.ts generate",
     "db:migrate": "npx drizzle-kit --config src/drizzle.config.ts migrate"
   },
@@ -23,7 +24,7 @@
     "@repo/common": "workspace:*"
   },
   "exports": {
-    ".": "./src/index.ts",
-    "./schema": "./src/schema/index.ts"
+    ".": "./dist/index.js",
+    "./schema": "./dist/schema/index.js"
   }
 }

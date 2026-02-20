@@ -16,6 +16,8 @@ node_modules
 .env.executor
 .env.service
 .env.web
+.env.staging
+.env.prod
 
 # Testing
 coverage

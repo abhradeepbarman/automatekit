@@ -57,7 +57,7 @@ export default function Register() {
     onSuccess: (data) => {
       setUserCredentials(data);
       toast.success('Account created successfully!', {
-        description: 'Welcome to AutomateX! Redirecting to dashboard...',
+        description: 'Welcome to AutomateKit! Redirecting to dashboard...',
       });
       navigate('/dashboard');
       queryClient.invalidateQueries({ queryKey: ['me'] });
@@ -235,7 +235,7 @@ export default function Register() {
             </p>
 
             <p className="text-xs">
-              © {new Date().getFullYear()} AutomateX • All rights reserved
+              © {new Date().getFullYear()} AutomateKit • All rights reserved
             </p>
           </CardFooter>
         </Card>

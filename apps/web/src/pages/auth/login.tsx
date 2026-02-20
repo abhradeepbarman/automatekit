@@ -75,7 +75,7 @@ export default function Login() {
         {/* Branding */}
         <div className="text-center">
           <h1 className="text-4xl font-bold tracking-tight text-primary">
-            AutomateX
+            AutomateKit
           </h1>
           <p className="mt-3 text-muted-foreground">
             Automate smarter. Work faster.
@@ -174,7 +174,7 @@ export default function Login() {
             </p>
 
             <p className="text-xs">
-              © {new Date().getFullYear()} AutomateX • All rights reserved
+              © {new Date().getFullYear()} AutomateKit • All rights reserved
             </p>
           </CardFooter>
         </Card>
