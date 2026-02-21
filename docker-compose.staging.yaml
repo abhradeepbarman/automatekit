@@ -1,22 +1,19 @@
 services:
   automatekit-web-staging:
-    build:
-      context: .
-      dockerfile: docker/Dockerfile.web
-      args:
-        VITE_APP_BASE_URL: ${STAGING_APP_URL}
-        VITE_API_BASE_URL: ${STAGING_API_BASE_URL}
+    image: ${DOCKER_USERNAME}/automatekit-web:staging-latest
     container_name: automatekit-web-staging
     restart: always
+    ports:
+      - "3100:80" 
     networks:
-      - app-network
-  
+      - automatekit-staging-network
+
   automatekit-server-staging:
-    build:
-      context: .
-      dockerfile: docker/Dockerfile.server
+    image: ${DOCKER_USERNAME}/automatekit-server:staging-latest
     container_name: automatekit-server-staging
     restart: always
+    ports:
+      - "8100:8000"
     environment:
       NODE_ENV: production
       PORT: ${STAGING_SERVER_PORT:-8000}
@@ -31,12 +28,10 @@ services:
       automatekit-postgres-staging:
         condition: service_healthy
     networks:
-      - app-network
+      - automatekit-staging-network
 
   automatekit-executor-staging:
-    build:
-      context: .
-      dockerfile: docker/Dockerfile.executor
+    image: ${DOCKER_USERNAME}/automatekit-executor:staging-latest
     container_name: automatekit-executor-staging
     restart: always
     environment:
@@ -50,7 +45,7 @@ services:
       automatekit-redis-staging:
         condition: service_healthy
     networks:
-      - app-network
+      - automatekit-staging-network
 
   automatekit-postgres-staging:
     image: postgres:16-alpine
@@ -63,12 +58,16 @@ services:
     volumes:
       - automatekit-postgres-staging-data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${STAGING_POSTGRES_USER} -d ${STAGING_POSTGRES_DB}"]
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${STAGING_POSTGRES_USER} -d ${STAGING_POSTGRES_DB}",
+        ]
       interval: 10s
       timeout: 5s
       retries: 5
     networks:
-      - app-network
+      - automatekit-staging-network
 
   automatekit-redis-staging:
     image: redis:7-alpine
@@ -83,12 +82,12 @@ services:
       timeout: 5s
       retries: 5
     networks:
-      - app-network
+      - automatekit-staging-network
 
 volumes:
   automatekit-postgres-staging-data:
   automatekit-redis-staging-data:
 
 networks:
-  app-network:
+  automatekit-staging-network:
     driver: bridge

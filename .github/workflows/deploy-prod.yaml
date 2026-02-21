@@ -1,0 +1,77 @@
+name: Continuous Deployment (Prod)
+on:
+  push:
+    branches:
+      - main
+
+concurrency:
+  group: deploy-prod
+  cancel-in-progress: true
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Docker login
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_TOKEN }}
+
+      - name: Build and push web (prod)
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./docker/Dockerfile.web
+          push: true
+          tags: |
+            ${{ secrets.DOCKER_USERNAME }}/automatekit-web:prod-${{ github.sha }}
+            ${{ secrets.DOCKER_USERNAME }}/automatekit-web:prod-latest
+          build-args: |
+            VITE_APP_BASE_URL=${{ secrets.PROD_APP_URL }}
+            VITE_API_BASE_URL=${{ secrets.PROD_API_BASE_URL }}
+
+      - name: Build and push server (prod)
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./docker/Dockerfile.server
+          push: true
+          tags: |
+            ${{ secrets.DOCKER_USERNAME }}/automatekit-server:prod-${{ github.sha }}
+            ${{ secrets.DOCKER_USERNAME }}/automatekit-server:prod-latest
+
+      - name: Build and push executor (prod)
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./docker/Dockerfile.executor
+          push: true
+          tags: |
+            ${{ secrets.DOCKER_USERNAME }}/automatekit-executor:prod-${{ github.sha }}
+            ${{ secrets.DOCKER_USERNAME }}/automatekit-executor:prod-latest
+
+      - name: Deploy to prod host
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            set -e
+            cd ${{ secrets.PROD_DEPLOY_PATH }}
+            DOCKER_USERNAME=${{ secrets.DOCKER_USERNAME }} \
+            PROD_IMAGE_TAG=prod-${{ github.sha }} \
+            docker compose --env-file .env.prod -f docker-compose.prod.yaml pull \
+              automatekit-web-prod automatekit-server-prod automatekit-executor-prod
+            DOCKER_USERNAME=${{ secrets.DOCKER_USERNAME }} \
+            PROD_IMAGE_TAG=prod-${{ github.sha }} \
+            docker compose --env-file .env.prod -f docker-compose.prod.yaml up -d \
+              automatekit-web-prod automatekit-server-prod automatekit-executor-prod
+            docker image prune -f

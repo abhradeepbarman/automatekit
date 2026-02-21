@@ -1,22 +1,19 @@
 services:
   automatekit-web-prod:
-    build:
-      context: .
-      dockerfile: docker/Dockerfile.web
-      args:
-        VITE_APP_BASE_URL: ${PROD_APP_URL}
-        VITE_API_BASE_URL: ${PROD_API_BASE_URL}
+    image: ${DOCKER_USERNAME}/automatekit-web:prod-latest
     container_name: automatekit-web-prod
     restart: always
+    ports:
+      - "3000:80"
     networks:
-      - app-network
+      - automatekit-prod-network
 
   automatekit-server-prod:
-    build:
-      context: .
-      dockerfile: docker/Dockerfile.server
+    image: ${DOCKER_USERNAME}/automatekit-server:prod-latest
     container_name: automatekit-server-prod
     restart: always
+    ports:
+      - "8000:8000"
     environment:
       NODE_ENV: production
       PORT: ${PROD_SERVER_PORT:-8000}
@@ -31,12 +28,10 @@ services:
       automatekit-postgres-prod:
         condition: service_healthy
     networks:
-      - app-network
+      - automatekit-prod-network
 
   automatekit-executor-prod:
-    build:
-      context: .
-      dockerfile: docker/Dockerfile.executor
+    image: ${DOCKER_USERNAME}/automatekit-executor:prod-latest
     container_name: automatekit-executor-prod
     restart: always
     environment:
@@ -50,7 +45,7 @@ services:
       automatekit-redis-prod:
         condition: service_healthy
     networks:
-      - app-network
+      - automatekit-prod-network
 
   automatekit-postgres-prod:
     image: postgres:16-alpine
@@ -72,7 +67,7 @@ services:
       timeout: 5s
       retries: 5
     networks:
-      - app-network
+      - automatekit-prod-network
 
   automatekit-redis-prod:
     image: redis:7-alpine
@@ -87,12 +82,12 @@ services:
       timeout: 5s
       retries: 5
     networks:
-      - app-network
+      - automatekit-prod-network
 
 volumes:
   automatekit-postgres-prod-data:
   automatekit-redis-prod-data:
 
 networks:
-  app-network:
+  automatekit-prod-network:
     driver: bridge

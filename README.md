@@ -125,6 +125,13 @@ Start production:
 docker compose --env-file .env.prod -f docker-compose.prod.yaml up -d --build
 ```
 
+When deploying from CI/CD with prebuilt images, set image tags then pull:
+
+```bash
+STAGING_IMAGE_TAG=staging-<git_sha> docker compose --env-file .env.staging -f docker-compose.staging.yaml pull
+PROD_IMAGE_TAG=prod-<git_sha> docker compose --env-file .env.prod -f docker-compose.prod.yaml pull
+```
+
 For deployment, you no longer need `apps/server/.env` or `apps/executor/.env` on the host.
 
 ## Environment Hygiene
