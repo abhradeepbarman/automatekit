@@ -68,10 +68,10 @@ jobs:
             cd /var/www/automatekit/staging
             DOCKER_USERNAME=${{ secrets.DOCKER_USERNAME }} \
             STAGING_IMAGE_TAG=staging-${{ github.sha }} \
-            docker compose --env-file .env.staging -f docker-compose.staging.yaml pull \
+            docker compose --env-file .env -f docker-compose.staging.yaml pull \
               automatekit-web-staging automatekit-server-staging automatekit-executor-staging
             DOCKER_USERNAME=${{ secrets.DOCKER_USERNAME }} \
             STAGING_IMAGE_TAG=staging-${{ github.sha }} \
-            docker compose --env-file .env.staging -f docker-compose.staging.yaml up -d \
+            docker compose --env-file .env -f docker-compose.staging.yaml up -d \
               automatekit-web-staging automatekit-server-staging automatekit-executor-staging
             docker image prune -f
