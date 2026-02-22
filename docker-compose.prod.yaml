@@ -5,8 +5,6 @@ services:
     restart: always
     ports:
       - "3000:80"
-    networks:
-      - automatekit-prod-network
 
   automatekit-server-prod:
     image: ${DOCKER_USERNAME}/automatekit-server:prod-latest
@@ -16,7 +14,7 @@ services:
       - "8000:8000"
     environment:
       NODE_ENV: production
-      PORT: ${PROD_SERVER_PORT:-8000}
+      PORT: ${PROD_SERVER_PORT}
       DATABASE_URL: ${PROD_DATABASE_URL}
       ACCESS_SECRET: ${PROD_ACCESS_SECRET}
       REFRESH_SECRET: ${PROD_REFRESH_SECRET}
@@ -24,11 +22,6 @@ services:
       GOOGLE_CLIENT_ID: ${PROD_GOOGLE_CLIENT_ID}
       GOOGLE_CLIENT_SECRET: ${PROD_GOOGLE_CLIENT_SECRET}
       GOOGLE_REDIRECT_URI: ${PROD_GOOGLE_REDIRECT_URI}
-    depends_on:
-      automatekit-postgres-prod:
-        condition: service_healthy
-    networks:
-      - automatekit-prod-network
 
   automatekit-executor-prod:
     image: ${DOCKER_USERNAME}/automatekit-executor:prod-latest
@@ -37,57 +30,4 @@ services:
     environment:
       NODE_ENV: production
       DATABASE_URL: ${PROD_DATABASE_URL}
-      REDIS_HOST: ${PROD_REDIS_HOST:-automatekit-redis-prod}
-      REDIS_PORT: ${PROD_REDIS_PORT:-6379}
-    depends_on:
-      automatekit-postgres-prod:
-        condition: service_healthy
-      automatekit-redis-prod:
-        condition: service_healthy
-    networks:
-      - automatekit-prod-network
-
-  automatekit-postgres-prod:
-    image: postgres:16-alpine
-    container_name: automatekit-postgres-prod
-    restart: always
-    environment:
-      POSTGRES_USER: ${PROD_POSTGRES_USER}
-      POSTGRES_PASSWORD: ${PROD_POSTGRES_PASSWORD}
-      POSTGRES_DB: ${PROD_POSTGRES_DB}
-    volumes:
-      - automatekit-postgres-prod-data:/var/lib/postgresql/data
-    healthcheck:
-      test:
-        [
-          "CMD-SHELL",
-          "pg_isready -U ${PROD_POSTGRES_USER} -d ${PROD_POSTGRES_DB}",
-        ]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    networks:
-      - automatekit-prod-network
-
-  automatekit-redis-prod:
-    image: redis:7-alpine
-    container_name: automatekit-redis-prod
-    restart: always
-    command: redis-server --appendonly yes
-    volumes:
-      - automatekit-redis-prod-data:/data
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    networks:
-      - automatekit-prod-network
-
-volumes:
-  automatekit-postgres-prod-data:
-  automatekit-redis-prod-data:
-
-networks:
-  automatekit-prod-network:
-    driver: bridge
+      REDIS_URL: ${PROD_REDIS_URL}

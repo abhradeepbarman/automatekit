@@ -5,8 +5,7 @@ export const queueName = 'action-execution';
 
 export const actionQueue = new Queue(queueName, {
   connection: {
-    host: config.REDIS_HOST,
-    port: config.REDIS_PORT,
+    url: config.REDIS_URL,
   },
 });
 

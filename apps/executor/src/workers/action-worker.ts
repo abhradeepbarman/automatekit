@@ -227,8 +227,7 @@ export const actionWorker = new Worker<ActionJobData>(
   },
   {
     connection: {
-      host: config.REDIS_HOST,
-      port: config.REDIS_PORT,
+      url: config.REDIS_URL,
     },
     concurrency: 5,
   },

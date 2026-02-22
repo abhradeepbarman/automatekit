@@ -4,9 +4,7 @@ services:
     container_name: automatekit-web-staging
     restart: always
     ports:
-      - "3100:80" 
-    networks:
-      - automatekit-staging-network
+      - "3100:80"
 
   automatekit-server-staging:
     image: ${DOCKER_USERNAME}/automatekit-server:staging-latest
@@ -16,7 +14,7 @@ services:
       - "8100:8000"
     environment:
       NODE_ENV: production
-      PORT: ${STAGING_SERVER_PORT:-8000}
+      PORT: ${STAGING_SERVER_PORT}
       DATABASE_URL: ${STAGING_DATABASE_URL}
       ACCESS_SECRET: ${STAGING_ACCESS_SECRET}
       REFRESH_SECRET: ${STAGING_REFRESH_SECRET}
@@ -24,11 +22,6 @@ services:
       GOOGLE_CLIENT_ID: ${STAGING_GOOGLE_CLIENT_ID}
       GOOGLE_CLIENT_SECRET: ${STAGING_GOOGLE_CLIENT_SECRET}
       GOOGLE_REDIRECT_URI: ${STAGING_GOOGLE_REDIRECT_URI}
-    depends_on:
-      automatekit-postgres-staging:
-        condition: service_healthy
-    networks:
-      - automatekit-staging-network
 
   automatekit-executor-staging:
     image: ${DOCKER_USERNAME}/automatekit-executor:staging-latest
@@ -37,57 +30,4 @@ services:
     environment:
       NODE_ENV: production
       DATABASE_URL: ${STAGING_DATABASE_URL}
-      REDIS_HOST: ${STAGING_REDIS_HOST:-automatekit-redis-staging}
-      REDIS_PORT: ${STAGING_REDIS_PORT:-6379}
-    depends_on:
-      automatekit-postgres-staging:
-        condition: service_healthy
-      automatekit-redis-staging:
-        condition: service_healthy
-    networks:
-      - automatekit-staging-network
-
-  automatekit-postgres-staging:
-    image: postgres:16-alpine
-    container_name: automatekit-postgres-staging
-    restart: always
-    environment:
-      POSTGRES_USER: ${STAGING_POSTGRES_USER}
-      POSTGRES_PASSWORD: ${STAGING_POSTGRES_PASSWORD}
-      POSTGRES_DB: ${STAGING_POSTGRES_DB}
-    volumes:
-      - automatekit-postgres-staging-data:/var/lib/postgresql/data
-    healthcheck:
-      test:
-        [
-          "CMD-SHELL",
-          "pg_isready -U ${STAGING_POSTGRES_USER} -d ${STAGING_POSTGRES_DB}",
-        ]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    networks:
-      - automatekit-staging-network
-
-  automatekit-redis-staging:
-    image: redis:7-alpine
-    container_name: automatekit-redis-staging
-    restart: always
-    command: redis-server --appendonly yes
-    volumes:
-      - automatekit-redis-staging-data:/data
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    networks:
-      - automatekit-staging-network
-
-volumes:
-  automatekit-postgres-staging-data:
-  automatekit-redis-staging-data:
-
-networks:
-  automatekit-staging-network:
-    driver: bridge
+      REDIS_URL: ${STAGING_REDIS_URL}
