@@ -2,7 +2,7 @@ import config from '@/config';
 import axios from 'axios';
 
 const axiosInstance = axios.create({
-  baseURL: `${config.API_BASE_URL}`,
+  baseURL: `${config.API_BASE_URL}/api/v1`,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -12,7 +12,7 @@ const axiosInstance = axios.create({
 const refreshAccessToken = async () => {
   try {
     const response = await axios.post(
-      `${config.API_BASE_URL}/auth/refresh`,
+      `${config.API_BASE_URL}/api/v1/auth/refresh`,
       {},
       {
         withCredentials: true,
