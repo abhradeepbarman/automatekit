@@ -4,19 +4,12 @@ on:
     branches:
       - main
 
-concurrency:
-  group: deploy-prod
-  cancel-in-progress: true
-
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
 
       - name: Docker login
         uses: docker/login-action@v3
@@ -65,13 +58,8 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             set -e
-            cd ${{ secrets.PROD_DEPLOY_PATH }}
-            DOCKER_USERNAME=${{ secrets.DOCKER_USERNAME }} \
-            PROD_IMAGE_TAG=prod-${{ github.sha }} \
-            docker compose --env-file .env -f docker-compose.prod.yaml pull \
-              automatekit-web-prod automatekit-server-prod automatekit-executor-prod
-            DOCKER_USERNAME=${{ secrets.DOCKER_USERNAME }} \
-            PROD_IMAGE_TAG=prod-${{ github.sha }} \
-            docker compose --env-file .env -f docker-compose.prod.yaml up -d \
-              automatekit-web-prod automatekit-server-prod automatekit-executor-prod
+            cd /var/www/automatekit/prod
+            export DOCKER_USERNAME=${{ secrets.DOCKER_USERNAME }}
+            docker compose --env-file .env -f docker-compose.prod.yaml pull
+            docker compose --env-file .env -f docker-compose.prod.yaml up -d
             docker image prune -f
