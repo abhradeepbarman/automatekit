@@ -12,7 +12,7 @@ const errorHandler = (
   next: NextFunction,
 ) => {
   let statusCode = 500;
-  let message: string = 'Internal Server Error';
+  let message: string = 'Internal server error';
   let data: object | null = null;
 
   console.error(err);

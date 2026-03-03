@@ -1,12 +1,18 @@
-import { NextFunction, Request, Response } from 'express';
-import { loginSchema, registerSchema } from '@repo/common/validators';
-import { and, eq } from 'drizzle-orm';
+import {
+  loginSchema,
+  registerSchema,
+  resetPasswordSchema,
+} from '@repo/common/validators';
+import db from '@repo/db';
+import { passwordTokens, users } from '@repo/db/schema';
 import bcrypt from 'bcryptjs';
+import { and, eq } from 'drizzle-orm';
+import { NextFunction, Request, Response } from 'express';
 import jwt, { JwtPayload } from 'jsonwebtoken';
 import config from '../config';
+import { sendEmail } from '../services/send-email';
+import { forgotPasswordEmailTemplate } from '../template';
 import { asyncHandler, CustomErrorHandler, ResponseHandler } from '../utils';
-import db from '@repo/db';
-import { users } from '@repo/db/schema';
 
 export const generateTokens = (userId: string) => {
   const accessToken = jwt.sign({ id: userId }, config.ACCESS_SECRET, {
@@ -184,5 +190,81 @@ export const refreshAccessToken = asyncHandler(
         access_token: accessToken,
       }),
     );
+  },
+);
+
+export const sendForgotPasswordEmail = asyncHandler(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const { email } = req.body;
+    if (!email) {
+      return next(CustomErrorHandler.badRequest('Email is required'));
+    }
+
+    const existingUser = await db.query.users.findFirst({
+      where: eq(users.email, email),
+    });
+
+    if (!existingUser) {
+      return next(CustomErrorHandler.notFound('User not found'));
+    }
+
+    const token = jwt.sign({ id: existingUser.id }, config.ACCESS_SECRET, {
+      expiresIn: '24h',
+    });
+    const link = `${config.APP_URL}/reset-password/${token}`;
+
+    await db.insert(passwordTokens).values({
+      userId: existingUser.id,
+      token: token,
+    });
+
+    //send email
+    const html = forgotPasswordEmailTemplate(existingUser.name, link);
+    await sendEmail({
+      to: email as string,
+      subject: 'Reset Your Password',
+      body: html,
+    });
+
+    return res
+      .status(200)
+      .send(ResponseHandler(200, 'Email sent successfully', { link }));
+  },
+);
+
+export const resetPassword = asyncHandler(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const { token } = req.params;
+    const body = resetPasswordSchema.parse(req.body);
+
+    const existingToken = await db.query.passwordTokens.findFirst({
+      where: eq(passwordTokens.token, token as string),
+    });
+    if (!existingToken) {
+      return next(CustomErrorHandler.badRequest('Token is invalid'));
+    }
+
+    const payload = jwt.verify(
+      token as string,
+      config.ACCESS_SECRET,
+    ) as JwtPayload;
+
+    if (payload.id != existingToken.userId) {
+      return next(CustomErrorHandler.badRequest('Token is invalid'));
+    }
+
+    if (Date.now() > existingToken.createdAt.getTime() + 24 * 60 * 60 * 1000) {
+      return next(CustomErrorHandler.badRequest('Token is expired'));
+    }
+
+    const hashedPassword = await bcrypt.hash(body.password, 10);
+    await db
+      .update(users)
+      .set({ password: hashedPassword })
+      .where(eq(users.id, existingToken.userId));
+
+    return res
+      .status(200)
+      .send(ResponseHandler(200, 'Password reset successfully'));
   },
 );

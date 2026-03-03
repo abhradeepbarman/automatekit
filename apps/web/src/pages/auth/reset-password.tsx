@@ -8,11 +8,11 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { registerSchema } from '@repo/common/validators';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
-import { Link, useNavigate } from 'react-router-dom';
 import { z } from 'zod';
+import { resetPasswordSchema } from '@repo/common/validators';
+import { zodResolver } from '@hookform/resolvers/zod';
 import {
   Form,
   FormControl,
@@ -21,59 +21,76 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation } from '@tanstack/react-query';
 import authService from '@/services/auth.service';
 import { toast } from 'sonner';
-import { useAuth } from '@/context/auth-context';
-
-import { Eye, EyeOff } from 'lucide-react';
-import { useState } from 'react';
 import type { AxiosError } from 'axios';
+import { useState } from 'react';
+import { Eye, EyeOff, KeyRound } from 'lucide-react';
 
-export default function Register() {
+type ResetPasswordForm = z.infer<typeof resetPasswordSchema>;
+
+export default function ResetPassword() {
+  const { token } = useParams<{ token: string }>();
+  const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const { setUserCredentials } = useAuth();
-  const queryClient = useQueryClient();
-  const navigate = useNavigate();
-  const form = useForm<z.infer<typeof registerSchema>>({
-    resolver: zodResolver(registerSchema),
+
+  const form = useForm<ResetPasswordForm>({
+    resolver: zodResolver(resetPasswordSchema),
     defaultValues: {
-      name: '',
-      email: '',
       password: '',
       confirmPassword: '',
     },
   });
 
-  const { mutateAsync: userRegister } = useMutation({
-    mutationFn: (values: z.infer<typeof registerSchema>) =>
-      authService.register(
-        values.name,
-        values.email,
+  const { mutateAsync: doResetPassword } = useMutation({
+    mutationFn: (values: ResetPasswordForm) =>
+      authService.resetPassword(
+        token!,
         values.password,
         values.confirmPassword,
       ),
-    onSuccess: (data) => {
-      setUserCredentials(data);
-      toast.success('Account created successfully!', {
-        description: 'Redirecting to dashboard...',
+    onSuccess: () => {
+      toast.success('Password reset successfully!', {
+        description: 'You can now sign in with your new password.',
       });
-      navigate('/dashboard');
-      queryClient.invalidateQueries({ queryKey: ['me'] });
+      navigate('/login');
     },
     onError: (error: AxiosError<{ message: string }>) => {
-      console.error('Registration failed:', error);
-      toast.error('Registration failed', {
+      console.error('Reset password failed:', error);
+      toast.error('Failed to reset password', {
         description:
           error?.response?.data?.message ||
-          'Unable to create account. Please try again.',
+          'The link may be expired or invalid. Please request a new one.',
       });
     },
   });
 
-  async function onSubmit(values: z.infer<typeof registerSchema>) {
-    await userRegister(values);
+  async function onSubmit(values: ResetPasswordForm) {
+    await doResetPassword(values);
+  }
+
+  if (!token) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background px-4 py-12">
+        <div className="w-full max-w-md">
+          <Card className="border-border/50 text-center">
+            <CardContent className="pt-10 pb-8 space-y-3">
+              <p className="text-lg font-semibold text-destructive">
+                Invalid Reset Link
+              </p>
+              <p className="text-sm text-muted-foreground">
+                This password reset link is missing a token and is invalid.
+              </p>
+              <Button asChild className="mt-4">
+                <Link to="/forgot-password">Request a new link</Link>
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -85,72 +102,38 @@ export default function Register() {
             to={'/'}
             className="text-4xl font-bold tracking-tight text-primary"
           >
-            AutomateX
+            AutomateKit
           </Link>
           <p className="mt-3 text-muted-foreground">
-            Start automating smarter today
+            Automate smarter. Work faster.
           </p>
         </div>
 
         <Card className="border-border/50">
           <CardHeader className="space-y-1 pb-6">
+            <div className="flex justify-center mb-4">
+              <div className="rounded-full bg-primary/10 p-4">
+                <KeyRound className="h-10 w-10 text-primary" />
+              </div>
+            </div>
             <CardTitle className="text-2xl text-center font-semibold">
-              Create an account
+              Set new password
             </CardTitle>
             <CardDescription className="text-center">
-              Enter your details to get started
+              Your new password must be different from previous ones.
             </CardDescription>
           </CardHeader>
 
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
               <CardContent className="space-y-4">
-                {/* Name */}
-                <FormField
-                  control={form.control}
-                  name="name"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Full Name</FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder="John Doe"
-                          autoComplete="name"
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                {/* Email */}
-                <FormField
-                  control={form.control}
-                  name="email"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Email</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="email"
-                          placeholder="name@example.com"
-                          autoComplete="email"
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                {/* Password */}
+                {/* New Password */}
                 <FormField
                   control={form.control}
                   name="password"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Password</FormLabel>
+                      <FormLabel>New Password</FormLabel>
                       <FormControl>
                         <div className="relative">
                           <Input
@@ -185,7 +168,7 @@ export default function Register() {
                   name="confirmPassword"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Confirm Password</FormLabel>
+                      <FormLabel>Confirm New Password</FormLabel>
                       <FormControl>
                         <div className="relative">
                           <Input
@@ -222,8 +205,8 @@ export default function Register() {
                   disabled={form.formState.isSubmitting}
                 >
                   {form.formState.isSubmitting
-                    ? 'Creating account...'
-                    : 'Create account'}
+                    ? 'Resetting...'
+                    : 'Reset password'}
                 </Button>
               </CardContent>
             </form>
@@ -231,12 +214,11 @@ export default function Register() {
 
           <CardFooter className="flex flex-col gap-4 border-t bg-muted/40 pt-6 text-sm text-muted-foreground">
             <p>
-              Already have an account?{' '}
+              Remembered your password?{' '}
               <Link to="/login" className="text-primary underline">
                 Sign in
               </Link>
             </p>
-
             <p className="text-xs">
               © {new Date().getFullYear()} AutomateKit • All rights reserved
             </p>

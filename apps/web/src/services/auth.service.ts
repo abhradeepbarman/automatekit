@@ -41,6 +41,21 @@ class AuthService {
   async logout(): Promise<void> {
     await axiosInstance.post('/auth/logout');
   }
+
+  async forgotPassword(email: string): Promise<void> {
+    await axiosInstance.post('/auth/forgot-password', { email });
+  }
+
+  async resetPassword(
+    token: string,
+    password: string,
+    confirmPassword: string,
+  ): Promise<void> {
+    await axiosInstance.post(`/auth/reset-password/${token}`, {
+      password,
+      confirmPassword,
+    });
+  }
 }
 
 const authService = new AuthService();

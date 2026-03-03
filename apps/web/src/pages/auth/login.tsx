@@ -50,7 +50,7 @@ export default function Login() {
     onSuccess: (data) => {
       setUserCredentials(data);
       toast.success('Login successful!', {
-        description: 'Welcome back! Redirecting to dashboard...',
+        description: 'Redirecting to dashboard...',
       });
       navigate('/dashboard');
       queryClient.invalidateQueries({ queryKey: ['me'] });
@@ -59,8 +59,7 @@ export default function Login() {
       console.error('Login failed:', error);
       toast.error('Login failed', {
         description:
-          error?.response?.data?.message ||
-          'Invalid email or password. Please try again.',
+          error?.response?.data?.message || 'Invalid email or password.',
       });
     },
   });
@@ -74,9 +73,12 @@ export default function Login() {
       <div className="w-full max-w-md space-y-8">
         {/* Branding */}
         <div className="text-center">
-          <h1 className="text-4xl font-bold tracking-tight text-primary">
+          <Link
+            to={'/'}
+            className="text-4xl font-bold tracking-tight text-primary"
+          >
             AutomateKit
-          </h1>
+          </Link>
           <p className="mt-3 text-muted-foreground">
             Automate smarter. Work faster.
           </p>
@@ -122,7 +124,10 @@ export default function Login() {
                     <FormItem>
                       <div className="flex items-center justify-between">
                         <FormLabel>Password</FormLabel>
-                        <Link to="#" className="text-xs text-primary underline">
+                        <Link
+                          to="/forgot-password"
+                          className="text-xs text-primary underline"
+                        >
                           Forgot password?
                         </Link>
                       </div>

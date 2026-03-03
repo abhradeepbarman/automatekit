@@ -24,7 +24,19 @@
     "@repo/common": "workspace:*"
   },
   "exports": {
-    ".": "./dist/index.js",
-    "./schema": "./dist/schema/index.js"
+    ".": {
+      "types": "./src/index.ts",
+      "development": "./src/index.ts",
+      "require": "./dist/index.js",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./schema": {
+      "types": "./src/schema/index.ts",
+      "development": "./src/schema/index.ts",
+      "require": "./dist/schema/index.js",
+      "import": "./dist/schema/index.js",
+      "default": "./dist/schema/index.js"
+    }
   }
 }

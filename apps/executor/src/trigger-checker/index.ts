@@ -1,7 +1,7 @@
 import apps from '@repo/common/@apps';
 import { ExecutionStatus, StepType, type IApp } from '@repo/common/types';
 import db from '@repo/db';
-import { connections, executionLogs, workflows } from '@repo/db/schema';
+import { executionLogs, workflows } from '@repo/db/schema';
 import { eq } from 'drizzle-orm';
 import cron from 'node-cron';
 import { v4 as uuid } from 'uuid';
