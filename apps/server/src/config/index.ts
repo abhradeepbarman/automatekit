@@ -7,6 +7,7 @@ const _config = {
   REFRESH_SECRET: process.env.REFRESH_SECRET || '',
   NODE_ENV: process.env.NODE_ENV || 'development',
   APP_URL: process.env.APP_URL || '',
+  API_URL: process.env.API_URL || '',
 
   MAIL_USER: process.env.MAIL_USER || '',
   MAIL_PASS: process.env.MAIL_PASS || '',

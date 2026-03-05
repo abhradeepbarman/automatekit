@@ -1,6 +1,6 @@
 import db from '@repo/db';
 import { executionLogs, steps, workflows } from '@repo/db/schema';
-import { and, desc, eq } from 'drizzle-orm';
+import { and, count, desc, eq } from 'drizzle-orm';
 import { NextFunction, Request, Response } from 'express';
 import { asyncHandler, CustomErrorHandler, ResponseHandler } from '../utils';
 
@@ -8,8 +8,10 @@ export const getWorkflowExecutionLogs = asyncHandler(
   async (req: Request, res: Response, next: NextFunction) => {
     const { workflowId } = req.params;
     const { id: userId } = req.user;
-    const limit = parseInt(req.query.limit as string) || 20;
-    const offset = parseInt(req.query.current as string) || 1;
+    let limit: number = Number(req.query.limit) || 20;
+    let offset: number = Number(req.query.offset) || 1;
+    if (offset < 1) offset = 20;
+    if (limit < 1) limit = 1;
 
     const workflow = await db.query.workflows.findFirst({
       where: and(

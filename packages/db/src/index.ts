@@ -10,6 +10,8 @@ import {
   steps,
   userRelations,
   users,
+  webhookRelations,
+  webhooks,
   workflowRelations,
   workflows,
 } from './schema';
@@ -21,6 +23,7 @@ const schema = {
   connections,
   executionLogs,
   passwordTokens,
+  webhooks,
 
   userRelations,
   workflowRelations,
@@ -28,6 +31,7 @@ const schema = {
   connectionRelations,
   executionLogRelations,
   passwordTokenRelations,
+  webhookRelations,
 };
 
 const db = drizzle(process.env.DATABASE_URL!, { schema });

@@ -1,5 +1,5 @@
 import 'dotenv/config';
-import './queue';
+import '@repo/queue';
 import './workers/action-worker';
 import { startTriggerChecker } from './trigger-checker';
 

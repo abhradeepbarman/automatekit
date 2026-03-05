@@ -1,8 +1,9 @@
 import { relations } from 'drizzle-orm';
 import { pgTable, timestamp, uuid, varchar } from 'drizzle-orm/pg-core';
-import { workflows } from './workflows';
 import { connections } from './connections';
 import { passwordTokens } from './password-tokens';
+import { webhooks } from './webhooks';
+import { workflows } from './workflows';
 
 export const users = pgTable('users', {
   id: uuid('id').primaryKey().defaultRandom().notNull(),
@@ -18,4 +19,5 @@ export const userRelations = relations(users, ({ many }) => ({
   workflows: many(workflows),
   connections: many(connections),
   passwordTokens: many(passwordTokens),
+  webhooks: many(webhooks),
 }));
