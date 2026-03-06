@@ -37,10 +37,7 @@ export const sendEmail: IAction<SendEmailMetadata> = {
     },
   ],
 
-  run: async (
-    metadata: SendEmailMetadata,
-    accessToken,
-  ): Promise<ReturnResponse> => {
+  run: async ({ metadata, accessToken }): Promise<ReturnResponse> => {
     try {
       const { to, subject, body } = metadata;
 

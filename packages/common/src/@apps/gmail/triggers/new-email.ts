@@ -48,11 +48,11 @@ export const newEmail: ITrigger<NewEmailMetadata> = {
     },
   ],
 
-  run: async (
-    metadata: NewEmailMetadata,
+  run: async ({
+    metadata,
     lastExecutedAt,
     accessToken,
-  ): Promise<ReturnResponse> => {
+  }): Promise<ReturnResponse> => {
     try {
       const { field, operator, value } = metadata;
       const lastExecuted = lastExecutedAt ? new Date(lastExecutedAt) : null;

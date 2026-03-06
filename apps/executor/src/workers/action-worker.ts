@@ -14,12 +14,13 @@ export interface ActionJobData {
   stepIndex: number;
   workflowId: string;
   jobId: string;
+  input?: unknown;
 }
 
 export const actionWorker = new Worker<ActionJobData>(
   actionQueueName,
   async (job: Job<ActionJobData>) => {
-    const { stepIndex, jobId, workflowId } = job.data;
+    const { stepIndex, jobId, workflowId, input } = job.data;
     try {
       const stepDetails = await db.query.steps.findFirst({
         where: and(
@@ -52,10 +53,12 @@ export const actionWorker = new Worker<ActionJobData>(
         return;
       }
 
-      const actionDetails = app.actions.find((a) => a.id === stepDetails.name);
+      const actionDetails = app.actions.find(
+        (a) => a.id === stepDetails.stepId,
+      );
       if (!actionDetails) {
         logger.error(
-          `Action ${stepDetails.name} not found in app ${stepDetails.app}`,
+          `Action ${stepDetails.stepId} not found in app ${stepDetails.app}`,
         );
         return;
       }
@@ -69,15 +72,18 @@ export const actionWorker = new Worker<ActionJobData>(
         return;
       }
 
-      let result = await actionDetails.run(
-        (stepDetails.metadata as any)?.data.fields,
-        connectionDetails.accessToken,
-      );
+      let result = await actionDetails.run({
+        metadata: (stepDetails.metadata as any)?.data.fields,
+        accessToken: connectionDetails.accessToken,
+        input,
+      });
 
       if (result.success && result.statusCode === 200) {
         await createExecutionLog(
           workflowId,
-          stepDetails.id,
+          app.id,
+          actionDetails.id,
+          StepType.ACTION,
           result.message ||
             `Action ${actionDetails.name} completed successfully`,
           jobId,
@@ -97,15 +103,17 @@ export const actionWorker = new Worker<ActionJobData>(
           );
 
           if (access_token) {
-            result = await actionDetails.run(
-              (stepDetails.metadata as any)?.data.fields,
-              access_token,
-            );
+            result = await actionDetails.run({
+              metadata: (stepDetails.metadata as any)?.data.fields,
+              accessToken: access_token,
+            });
 
             if (result.success && result.statusCode === 200) {
               await createExecutionLog(
                 workflowId,
-                stepDetails.id,
+                app.id,
+                actionDetails.id,
+                StepType.ACTION,
                 result.message ||
                   `Action ${actionDetails.name} completed successfully`,
                 jobId,
@@ -120,7 +128,9 @@ export const actionWorker = new Worker<ActionJobData>(
             } else {
               await createExecutionLog(
                 workflowId,
-                stepDetails.id,
+                app.id,
+                actionDetails.id,
+                StepType.ACTION,
                 'Failed after token refresh',
                 jobId,
                 ExecutionStatus.FAILED,
@@ -131,7 +141,9 @@ export const actionWorker = new Worker<ActionJobData>(
           logger.error('Error refreshing token: ' + refreshError);
           await createExecutionLog(
             workflowId,
-            stepDetails.id,
+            app.id,
+            actionDetails.id,
+            StepType.ACTION,
             'Failed to refresh token',
             jobId,
             ExecutionStatus.FAILED,
@@ -141,7 +153,9 @@ export const actionWorker = new Worker<ActionJobData>(
         logger.error(`Action ${actionDetails.name} failed: ${result.message}`);
         await createExecutionLog(
           workflowId,
-          stepDetails.id,
+          app.id,
+          actionDetails.id,
+          StepType.ACTION,
           result.message,
           jobId,
           ExecutionStatus.FAILED,

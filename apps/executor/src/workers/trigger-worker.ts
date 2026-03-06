@@ -17,6 +17,7 @@ import config from '../config';
 
 interface TriggerJobData {
   workflowId: string;
+  input?: unknown;
 }
 
 function hasValidAuth(app: IApp, triggerDetails: any): boolean {
@@ -103,7 +104,7 @@ export const triggerWorker = new Worker<TriggerJobData>(
       const triggerDetails = workflowDetails.steps.find(
         (step) => step.index === 0,
       );
-      if (!triggerDetails) {
+      if (!triggerDetails || triggerDetails.stepId === 'webhook') {
         logger.error('Workflow has no trigger step');
         return;
       }
@@ -125,30 +126,33 @@ export const triggerWorker = new Worker<TriggerJobData>(
       }
 
       const trigger = app.triggers.find(
-        (trigger) => trigger.id === triggerDetails.name,
+        (trigger) => trigger.id === triggerDetails.stepId,
       );
       if (!trigger) {
-        logger.error(`Trigger ${triggerDetails.name} not found`);
+        logger.error(`Trigger ${triggerDetails.stepId} not found`);
         return;
       }
 
       logger.info(
-        `Triggering ${triggerDetails.name} for workflow ${workflowId}`,
+        `Triggering ${triggerDetails.stepId} for workflow ${workflowId}`,
       );
 
       const jobId = nanoid();
 
-      let { success, message, statusCode } = await trigger.run(
-        (triggerDetails.metadata as any).data.fields,
-        workflowDetails.lastExecutedAt,
-        triggerDetails.connections?.accessToken || '',
-      );
+      let { success, message, statusCode } = await trigger.run({
+        metadata: (triggerDetails.metadata as any).data.fields,
+        lastExecutedAt: workflowDetails.lastExecutedAt,
+        accessToken: triggerDetails.connections?.accessToken || '',
+        input: job.data.input,
+      });
 
       if (success && statusCode === 200) {
         await createExecutionLog(
           workflowDetails.id,
-          triggerDetails.id,
-          message || `Trigger ${triggerDetails.name} completed successfully`,
+          app.id,
+          trigger.id,
+          StepType.TRIGGER,
+          message || `Trigger ${triggerDetails.stepId} completed successfully`,
           jobId,
           ExecutionStatus.COMPLETED,
         );
@@ -171,7 +175,9 @@ export const triggerWorker = new Worker<TriggerJobData>(
           logger.error('Failed to refresh token: ' + refreshError);
           await createExecutionLog(
             workflowDetails.id,
-            triggerDetails.id,
+            app.id,
+            trigger.id,
+            StepType.TRIGGER,
             'Failed to refresh token',
             jobId,
             ExecutionStatus.FAILED,
@@ -179,16 +185,18 @@ export const triggerWorker = new Worker<TriggerJobData>(
           return;
         }
 
-        const retryResult = await trigger.run(
-          (triggerDetails.metadata as any).data.fields,
-          workflowDetails.lastExecutedAt,
-          access_token,
-        );
+        const retryResult = await trigger.run({
+          metadata: (triggerDetails.metadata as any).data.fields,
+          lastExecutedAt: workflowDetails.lastExecutedAt,
+          accessToken: access_token,
+        });
 
         if (retryResult.success && retryResult.statusCode === 200) {
           await createExecutionLog(
             workflowDetails.id,
-            triggerDetails.id,
+            app.id,
+            trigger.id,
+            StepType.TRIGGER,
             retryResult.message ||
               `Trigger ${trigger.name} completed successfully`,
             jobId,
@@ -204,7 +212,9 @@ export const triggerWorker = new Worker<TriggerJobData>(
           logger.error(retryResult.message);
           await createExecutionLog(
             workflowDetails.id,
-            triggerDetails.id,
+            app.id,
+            trigger.id,
+            StepType.TRIGGER,
             retryResult.message || `Trigger ${trigger.name} failed`,
             jobId,
             ExecutionStatus.FAILED,
@@ -213,7 +223,9 @@ export const triggerWorker = new Worker<TriggerJobData>(
       } else {
         await createExecutionLog(
           workflowDetails.id,
-          triggerDetails.id,
+          app.id,
+          trigger.id,
+          StepType.TRIGGER,
           message || `Trigger ${trigger.name} failed`,
           jobId,
           ExecutionStatus.FAILED,

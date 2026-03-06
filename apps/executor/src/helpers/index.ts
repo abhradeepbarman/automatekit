@@ -1,11 +1,13 @@
-import { ExecutionStatus } from '@repo/common/types';
+import { ExecutionStatus, StepType } from '@repo/common/types';
 import { logger } from '@repo/common/utils';
 import db from '@repo/db';
 import { executionLogs } from '@repo/db/schema';
 
 export async function createExecutionLog(
   workflowId: string,
+  appId: string,
   stepId: string,
+  stepType: StepType,
   message: string,
   jobId: string,
   status: ExecutionStatus = ExecutionStatus.PENDING,
@@ -24,7 +26,7 @@ export async function createExecutionLog(
 
     const [newLog] = await db
       .insert(executionLogs)
-      .values({ workflowId, stepId, message, jobId, status })
+      .values({ workflowId, appId, stepId, stepType, message, jobId, status })
       .returning();
 
     if (!newLog) return '';

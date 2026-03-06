@@ -76,11 +76,12 @@ export interface ITrigger<T = any> {
   name: string;
   description: string;
   fields?: FieldConfig[];
-  run: (
-    metadata: T,
-    lastExecutedAt: Date | null,
-    accessToken?: string,
-  ) => Promise<ReturnResponse> | ReturnResponse;
+  run: (params: {
+    metadata: T;
+    lastExecutedAt?: Date | null;
+    accessToken?: string;
+    input?: unknown;
+  }) => Promise<ReturnResponse> | ReturnResponse;
 }
 
 export interface IAction<T = any> {
@@ -88,10 +89,11 @@ export interface IAction<T = any> {
   name: string;
   description: string;
   fields?: FieldConfig[];
-  run: (
-    metadata: T,
-    accessToken?: string,
-  ) => Promise<ReturnResponse> | ReturnResponse;
+  run: (params: {
+    metadata: T;
+    accessToken?: string;
+    input?: unknown;
+  }) => Promise<ReturnResponse> | ReturnResponse;
 }
 
 export enum PollingInterval {

@@ -38,8 +38,15 @@ export const timer: ITrigger<TimerMetadata> = {
     },
   ],
 
-  run: (metadata, lastExecutedAt): ReturnResponse => {
+  run: ({ metadata, lastExecutedAt }): ReturnResponse => {
     try {
+      if (!lastExecutedAt)
+        return {
+          success: true,
+          message: 'Timer triggered',
+          statusCode: 200,
+        };
+
       if (isIntervalPassed(lastExecutedAt, Number(metadata.intervalMs))) {
         return {
           success: true,

@@ -1,6 +1,6 @@
 import db from '@repo/db';
 import { executionLogs, steps, workflows } from '@repo/db/schema';
-import { and, count, desc, eq } from 'drizzle-orm';
+import { and, desc, eq } from 'drizzle-orm';
 import { NextFunction, Request, Response } from 'express';
 import { asyncHandler, CustomErrorHandler, ResponseHandler } from '../utils';
 
@@ -31,21 +31,12 @@ export const getWorkflowExecutionLogs = asyncHandler(
     const totalCount = totalCountResult.length;
 
     const executionLogsResult = await db
-      .select({
-        id: executionLogs.id,
-        app_id: steps.app,
-        step_id: steps.name,
-        executed_at: executionLogs.createdAt,
-        status: executionLogs.status,
-        step_type: steps.type,
-        message: executionLogs.message,
-      })
+      .select()
       .from(executionLogs)
       .where(eq(executionLogs.workflowId, workflowId as string))
       .limit(limit)
       .offset((offset - 1) * limit)
-      .orderBy(desc(executionLogs.createdAt))
-      .innerJoin(steps, eq(executionLogs.stepId, steps.id));
+      .orderBy(desc(executionLogs.createdAt));
 
     return res.status(200).send(
       ResponseHandler(200, 'Workflow execution logs', {

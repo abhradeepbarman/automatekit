@@ -1,4 +1,4 @@
-import { ExecutionStatus } from '@repo/common/types';
+import { ExecutionStatus, StepType } from '@repo/common/types';
 import { relations } from 'drizzle-orm';
 import { pgTable, timestamp, uuid, varchar } from 'drizzle-orm/pg-core';
 import { steps } from './steps';
@@ -8,10 +8,15 @@ export const executionLogs = pgTable('execution_logs', {
   id: uuid('id').notNull().primaryKey().defaultRandom(),
   workflowId: uuid('workflow_id')
     .notNull()
-    .references(() => workflows.id),
-  stepId: uuid('step_id')
-    .notNull()
-    .references(() => steps.id),
+    .references(() => workflows.id, {
+      onDelete: 'cascade',
+      onUpdate: 'no action',
+    }),
+  appId: varchar('app_id').notNull(),
+  stepId: varchar('step_id').notNull(),
+  stepType: varchar('step_type', {
+    enum: [StepType.TRIGGER, StepType.ACTION],
+  }).notNull(),
   jobId: varchar('job_id').notNull(),
   message: varchar('message').notNull(),
   status: varchar('status', {

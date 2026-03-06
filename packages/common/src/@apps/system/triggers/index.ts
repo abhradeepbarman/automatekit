@@ -1,3 +1,4 @@
 import { timer } from './timer';
+import { webhook } from './webhook';
 
-export default [timer];
+export default [timer, webhook];

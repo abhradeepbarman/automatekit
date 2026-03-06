@@ -1,0 +1,1 @@
+ALTER TABLE "steps" RENAME COLUMN "stepId" TO "step_id";

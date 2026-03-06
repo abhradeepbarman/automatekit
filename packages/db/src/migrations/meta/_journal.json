@@ -85,6 +85,34 @@
       "when": 1772649331277,
       "tag": "0011_lame_emma_frost",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1772812752874,
+      "tag": "0012_massive_slyde",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1772815268706,
+      "tag": "0013_quiet_raider",
+      "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1772827634619,
+      "tag": "0014_thick_spiral",
+      "breakpoints": true
+    },
+    {
+      "idx": 15,
+      "version": "7",
+      "when": 1772830510121,
+      "tag": "0015_goofy_dust",
+      "breakpoints": true
     }
   ]
 }

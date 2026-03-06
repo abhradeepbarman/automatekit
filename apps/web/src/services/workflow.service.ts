@@ -52,12 +52,15 @@ export interface IGetAllWorkflowsResponse {
 
 export interface IExecutionLog {
   id: string;
-  app_id: string;
-  step_id: string;
-  executed_at: string;
-  status: ExecutionStatus;
-  step_type: StepType;
+  workflowId: string;
+  appId: string;
+  stepId: string;
+  stepType: StepType;
+  jobId: string;
   message: string;
+  status: ExecutionStatus;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface IGetWorkflowExecutionLogsResponse {

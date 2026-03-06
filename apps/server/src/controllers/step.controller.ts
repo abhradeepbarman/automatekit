@@ -1,15 +1,18 @@
 import { addStepSchema, updateStepSchema } from '@repo/common/validators';
 import db from '@repo/db';
-import { steps, workflows } from '@repo/db/schema';
+import { steps, webhooks, workflows } from '@repo/db/schema';
 import { and, eq, gte } from 'drizzle-orm';
 import { NextFunction, Request, Response } from 'express';
 import { asyncHandler, CustomErrorHandler, ResponseHandler } from '../utils';
+import { AppType } from '@repo/common/types';
+import { nanoid } from 'nanoid';
+import config from '../config';
 
 export const addStep = asyncHandler(
   async (req: Request, res: Response, next: NextFunction) => {
     const { id: workflowId } = req.params;
     const body = addStepSchema.parse(req.body);
-    const { app, stepName, metadata, index, type, connectionId } = body;
+    let { app, stepId, metadata, index, type, connectionId } = body;
 
     const workflowDetails = await db.query.workflows.findFirst({
       where: and(eq(workflows.id, workflowId as string)),
@@ -23,12 +26,38 @@ export const addStep = asyncHandler(
       return next(CustomErrorHandler.notAllowed());
     }
 
+    if (app == AppType.SYSTEM && stepId == 'webhook') {
+      const path = nanoid();
+      const [newWebhook] = await db
+        .insert(webhooks)
+        .values({
+          workflowId: workflowId as string,
+          path,
+        })
+        .returning();
+
+      if (!newWebhook) {
+        return next(CustomErrorHandler.serverError());
+      }
+
+      metadata = {
+        ...metadata,
+        data: {
+          ...metadata.data,
+          webhook: {
+            id: newWebhook.id,
+            url: `${config.API_URL}/api/v1/webhook/${path}`,
+          },
+        },
+      };
+    }
+
     const [newStep] = await db
       .insert(steps)
       .values({
         workflowId: workflowId as string,
         app,
-        name: stepName,
+        stepId,
         metadata,
         index: index,
         type,

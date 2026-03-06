@@ -5,9 +5,13 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import apps from '@repo/common/@apps';
+import { AppType } from '@repo/common/types';
 import type { Node, NodeProps } from '@xyflow/react';
 import { Handle, Position } from '@xyflow/react';
-import { MoreVertical, Trash2 } from 'lucide-react';
+import { Copy, MoreVertical, Trash2 } from 'lucide-react';
+import { toast } from 'sonner';
+import { Badge } from '../ui/badge';
+import { Button } from '../ui/button';
 
 type ITriggerNodeData = Node<
   {
@@ -17,6 +21,10 @@ type ITriggerNodeData = Node<
     fields: any;
     handleEditClick: () => void;
     handleDeleteClick: () => void;
+    webhook?: {
+      id: string;
+      url: string;
+    };
   },
   'triggerNode'
 >;
@@ -26,6 +34,11 @@ const TriggerNode = ({ data }: NodeProps<ITriggerNodeData>) => {
   const triggerDetails = apps
     .filter((app) => app.id === data.appId)[0]
     ?.triggers?.filter((trigger) => trigger.id === data.triggerId)[0];
+
+  const copyWebhook = async () => {
+    await navigator.clipboard.writeText(data.webhook!.url);
+    toast.success('Webhook URL copied');
+  };
 
   return (
     <div className="relative min-w-65 rounded-md border bg-card shadow-sm">
@@ -65,7 +78,6 @@ const TriggerNode = ({ data }: NodeProps<ITriggerNodeData>) => {
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
-
       {/* Content */}
       <div className="px-3 py-2 space-y-1">
         <p className="text-sm font-medium">
@@ -77,7 +89,6 @@ const TriggerNode = ({ data }: NodeProps<ITriggerNodeData>) => {
           </p>
         )}
       </div>
-
       {/* Footer */}
       {data.fields && Object.keys(data.fields).length > 0 && (
         <div className="px-3 py-1.5 border-t bg-muted/10">
@@ -87,6 +98,27 @@ const TriggerNode = ({ data }: NodeProps<ITriggerNodeData>) => {
           </p>
         </div>
       )}
+
+      {/* webhook */}
+      {appDetails.id === AppType.SYSTEM &&
+        triggerDetails?.id === 'webhook' &&
+        data.webhook && (
+          <div className="px-3 py-2 border-t bg-muted/10 flex items-center justify-between gap-2">
+            <Badge variant="secondary" className="text-[10px]">
+              POST • JSON
+            </Badge>
+
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-6 text-xs gap-1"
+              onClick={copyWebhook}
+            >
+              <Copy className="h-3 w-3" />
+              Copy URL
+            </Button>
+          </div>
+        )}
 
       {/* Connection handle */}
       <Handle
