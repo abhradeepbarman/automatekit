@@ -3,12 +3,19 @@ import { pgTable, uuid } from 'drizzle-orm/pg-core';
 import { workflows } from './workflows';
 import { varchar } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
+import { steps } from './steps';
 
 export const webhooks = pgTable('webhooks', {
   id: uuid('id').primaryKey().defaultRandom().notNull(),
   workflowId: uuid('workflow_id')
     .notNull()
     .references(() => workflows.id, {
+      onDelete: 'cascade',
+      onUpdate: 'no action',
+    }),
+  stepId: uuid('step_id')
+    .notNull()
+    .references(() => steps.id, {
       onDelete: 'cascade',
       onUpdate: 'no action',
     }),
@@ -21,5 +28,9 @@ export const webhookRelations = relations(webhooks, ({ one }) => ({
   workflow: one(workflows, {
     fields: [webhooks.workflowId],
     references: [workflows.id],
+  }),
+  step: one(steps, {
+    fields: [webhooks.stepId],
+    references: [steps.id],
   }),
 }));

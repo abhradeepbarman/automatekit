@@ -1,22 +1,23 @@
 import axiosInstance from '@/lib/axios';
 import type { StepType } from '@repo/common/types';
+import type { IStep } from './workflow.service';
 
 class StepService {
   async addStep(
     workflowId: string,
     app: string,
-    stepId: string,
+    eventName: string,
     index: number,
     type: StepType,
     connectionId: string,
     metadata: any,
-  ): Promise<{ id: string }> {
+  ): Promise<IStep> {
     const { data } = await axiosInstance.post(`/step/workflow/${workflowId}`, {
       app,
       index,
       type,
       connectionId,
-      stepId,
+      eventName,
       metadata,
     });
 

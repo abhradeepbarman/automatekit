@@ -94,8 +94,8 @@ export default function Workflow() {
             id: step.id,
             data: {
               ...step.metadata.data,
-              handleEditClick: () => handleEditClick(),
-              handleDeleteClick: () => handleDeleteClick(step.id),
+              onEditClick: () => handleEditClick(),
+              onDeleteClick: () => handleDeleteClick(step.id),
             },
           };
         }),

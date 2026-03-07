@@ -4,7 +4,7 @@ import { StepType } from '../types';
 export const addStepSchema = z
   .object({
     app: z.string(),
-    stepId: z.string(),
+    eventName: z.string(),
     metadata: z.any().optional(),
     index: z.number(),
     connectionId: z.string().optional(),

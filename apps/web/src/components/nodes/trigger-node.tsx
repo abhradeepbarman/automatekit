@@ -19,8 +19,8 @@ type ITriggerNodeData = Node<
     triggerId: string;
     index: number;
     fields: any;
-    handleEditClick: () => void;
-    handleDeleteClick: () => void;
+    onEditClick: () => void;
+    onDeleteClick: () => void;
     webhook?: {
       id: string;
       url: string;
@@ -69,7 +69,7 @@ const TriggerNode = ({ data }: NodeProps<ITriggerNodeData>) => {
               Edit
             </DropdownMenuItem> */}
             <DropdownMenuItem
-              onClick={data.handleDeleteClick}
+              onClick={data.onDeleteClick}
               variant="destructive"
             >
               <Trash2 className="h-4 w-4 mr-2" />

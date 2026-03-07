@@ -11,6 +11,19 @@ export interface ICreateWorkflowResponse {
   updatedAt: string;
 }
 
+export interface IStep {
+  id: string;
+  type: string;
+  appId: string;
+  connectionId: string;
+  workflowId: string;
+  lastExecutedAt: string;
+  eventName: string;
+  metadata: Node;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface IGetWorkflowResponse {
   id: string;
   name: string;
@@ -18,18 +31,7 @@ export interface IGetWorkflowResponse {
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
-  steps: {
-    id: string;
-    type: string;
-    appId: string;
-    actionId: string;
-    connectionId: string;
-    workflowId: string;
-    createdAt: string;
-    updatedAt: string;
-    lastExecutedAt: string;
-    metadata: Node;
-  }[];
+  steps: IStep[];
 }
 
 export interface IGetAllWorkflowsResponse {

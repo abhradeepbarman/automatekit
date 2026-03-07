@@ -104,7 +104,7 @@ export const triggerWorker = new Worker<TriggerJobData>(
       const triggerDetails = workflowDetails.steps.find(
         (step) => step.index === 0,
       );
-      if (!triggerDetails || triggerDetails.stepId === 'webhook') {
+      if (!triggerDetails || triggerDetails.eventName === 'webhook') {
         logger.error('Workflow has no trigger step');
         return;
       }
@@ -126,15 +126,15 @@ export const triggerWorker = new Worker<TriggerJobData>(
       }
 
       const trigger = app.triggers.find(
-        (trigger) => trigger.id === triggerDetails.stepId,
+        (trigger) => trigger.id === triggerDetails.eventName,
       );
       if (!trigger) {
-        logger.error(`Trigger ${triggerDetails.stepId} not found`);
+        logger.error(`Trigger ${triggerDetails.eventName} not found`);
         return;
       }
 
       logger.info(
-        `Triggering ${triggerDetails.stepId} for workflow ${workflowId}`,
+        `Triggering ${triggerDetails.eventName} for workflow ${workflowId}`,
       );
 
       const jobId = nanoid();
@@ -152,7 +152,8 @@ export const triggerWorker = new Worker<TriggerJobData>(
           app.id,
           trigger.id,
           StepType.TRIGGER,
-          message || `Trigger ${triggerDetails.stepId} completed successfully`,
+          message ||
+            `Trigger ${triggerDetails.eventName} completed successfully`,
           jobId,
           ExecutionStatus.COMPLETED,
         );

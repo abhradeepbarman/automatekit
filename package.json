@@ -9,7 +9,8 @@
     "check-types": "turbo run check-types",
     "clean": "bash ./scripts/cleanup-workspace.sh",
     "docker:build:staging": "docker compose --env-file .env.staging -f docker-compose.staging.yaml build",
-    "docker:build:prod": "docker compose --env-file .env.prod -f docker-compose.prod.yaml build"
+    "docker:build:prod": "docker compose --env-file .env.prod -f docker-compose.prod.yaml build",
+    "set-env:prod": "bash ./scripts/set-env-prod.sh"
   },
   "devDependencies": {
     "prettier": "^3.7.4",

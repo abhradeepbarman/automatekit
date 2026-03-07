@@ -1,4 +1,4 @@
-import { ITrigger, ReturnResponse } from '../../../types';
+import { type ITrigger, type ReturnResponse } from '../../../types';
 
 export interface IWebhookMetadata {
   workflowId: string;
@@ -11,7 +11,7 @@ export const webhook: ITrigger<IWebhookMetadata> = {
   name: 'Webhook',
   description: 'Triggered when a webhook is received',
 
-  run: async ({ metadata, input }): Promise<ReturnResponse> => {
+  run: async (): Promise<ReturnResponse> => {
     try {
       return {
         success: true,

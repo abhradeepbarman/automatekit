@@ -1,3 +1,4 @@
+import { NODE_SPACING } from '@/constants/workflow';
 import stepService from '@/services/step.service';
 import apps from '@repo/common/@apps';
 import { StepType } from '@repo/common/types';
@@ -5,7 +6,6 @@ import { useMutation } from '@tanstack/react-query';
 import type { Edge, Node } from '@xyflow/react';
 import { useMemo, useState, type Dispatch, type SetStateAction } from 'react';
 import { useParams } from 'react-router-dom';
-import { NODE_SPACING } from '@/constants/workflow';
 import { toast } from 'sonner';
 import ConnectBtn from '../common/connect-btn';
 import DynamicForm from '../common/dynamic-form';
@@ -136,23 +136,22 @@ const ActionSheet = ({
     };
 
     try {
-      const { id } = await mutateAsync(nodeDetails);
+      const newStepDetails = await mutateAsync(nodeDetails);
+      const addActionButtonId = `add-action-${newStepDetails.metadata.id}`;
 
-      nodeDetails.id = id;
-      const addActionButtonId = `add-action-${id}`;
-
-      setNodes((prev) => {
+      setNodes((prev: Node[]) => {
         const oldButtonId = `add-action-${sourceNodeId}`;
         const filtered = prev.filter((n) => n.id !== oldButtonId);
 
         return [
           ...filtered,
           {
-            ...nodeDetails,
+            ...newStepDetails.metadata,
             data: {
-              ...nodeDetails.data,
-              handleEditClick: () => handleEditClick(),
-              handleDeleteClick: () => handleDeleteClick(id),
+              ...newStepDetails.metadata.data,
+              onEditClick: () => handleEditClick(),
+              onDeleteClick: () =>
+                handleDeleteClick(newStepDetails.metadata.id),
             },
           },
           {
@@ -164,7 +163,7 @@ const ActionSheet = ({
             },
             data: {
               onAddClick: () => {
-                setSelectedSourceNodeId(id);
+                setSelectedSourceNodeId(newStepDetails.metadata.id);
                 setActionSheetOpen(true);
               },
             },
@@ -179,13 +178,13 @@ const ActionSheet = ({
         return [
           ...filtered,
           {
-            id: `${sourceNodeId}-${id}`,
+            id: `${sourceNodeId}-${newStepDetails.metadata.id}`,
             source: sourceNodeId,
-            target: id,
+            target: newStepDetails.metadata.id,
           },
           {
-            id: `${id}-${addActionButtonId}`,
-            source: id,
+            id: `${newStepDetails.metadata.id}-${addActionButtonId}`,
+            source: newStepDetails.metadata.id,
             target: addActionButtonId,
           },
         ];

@@ -1,0 +1,2 @@
+ALTER TABLE "webhooks" ADD COLUMN "step_id" uuid NOT NULL;--> statement-breakpoint
+ALTER TABLE "webhooks" ADD CONSTRAINT "webhooks_step_id_steps_id_fk" FOREIGN KEY ("step_id") REFERENCES "public"."steps"("id") ON DELETE cascade ON UPDATE no action;

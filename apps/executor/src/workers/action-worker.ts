@@ -54,11 +54,11 @@ export const actionWorker = new Worker<ActionJobData>(
       }
 
       const actionDetails = app.actions.find(
-        (a) => a.id === stepDetails.stepId,
+        (a) => a.id === stepDetails.eventName,
       );
       if (!actionDetails) {
         logger.error(
-          `Action ${stepDetails.stepId} not found in app ${stepDetails.app}`,
+          `Action ${stepDetails.eventName} not found in app ${stepDetails.app}`,
         );
         return;
       }

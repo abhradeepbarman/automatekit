@@ -11,6 +11,7 @@ import {
 import { connections } from './connections';
 import { workflows } from './workflows';
 import { executionLogs } from './executions-logs';
+import { webhooks } from './webhooks';
 
 export const steps = pgTable('steps', {
   id: uuid('id').primaryKey().defaultRandom().notNull(),
@@ -23,7 +24,7 @@ export const steps = pgTable('steps', {
   type: varchar('type', {
     enum: [StepType.TRIGGER, StepType.ACTION],
   }).notNull(),
-  stepId: varchar('step_id').notNull(),
+  eventName: varchar('event_name').notNull(),
   index: integer('index').notNull(),
   app: varchar('app').notNull(),
   metadata: jsonb('metadata'),
@@ -45,4 +46,8 @@ export const stepRelations = relations(steps, ({ one, many }) => ({
     references: [connections.id],
   }),
   executionLogs: many(executionLogs),
+  webhooks: one(webhooks, {
+    fields: [steps.id],
+    references: [webhooks.stepId],
+  }),
 }));

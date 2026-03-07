@@ -1,9 +1,14 @@
+import { INITIAL_X, INITIAL_Y, NODE_SPACING } from '@/constants/workflow';
+import stepService from '@/services/step.service';
 import apps from '@repo/common/@apps';
 import { StepType } from '@repo/common/types';
+import { useMutation } from '@tanstack/react-query';
 import type { Edge, Node } from '@xyflow/react';
 import { useMemo, useState, type Dispatch, type SetStateAction } from 'react';
 import { useParams } from 'react-router-dom';
+import { toast } from 'sonner';
 import ConnectBtn from '../common/connect-btn';
+import DynamicForm from '../common/dynamic-form';
 import { Button } from '../ui/button';
 import { Field, FieldError, FieldLabel } from '../ui/field';
 import {
@@ -20,11 +25,6 @@ import {
   SheetHeader,
   SheetTitle,
 } from '../ui/sheet';
-import DynamicForm from '../common/dynamic-form';
-import stepService from '@/services/step.service';
-import { useMutation } from '@tanstack/react-query';
-import { INITIAL_X, INITIAL_Y, NODE_SPACING } from '@/constants/workflow';
-import { toast } from 'sonner';
 
 interface ITriggerSheetProps {
   open: boolean;
@@ -106,19 +106,17 @@ const TriggerSheet = ({
     };
 
     try {
-      const { id } = await mutateAsync(nodeDetails);
-
-      nodeDetails.id = id;
-      const addActionButtonId = `add-action-${id}`;
+      const newStepDetails = await mutateAsync(nodeDetails);
+      const addActionButtonId = `add-action-${newStepDetails.metadata.id}`;
 
       setNodes((prev) => [
         ...prev.filter((n) => n.type !== 'addTriggerButton'),
         {
-          ...nodeDetails,
+          ...newStepDetails.metadata,
           data: {
-            ...nodeDetails.data,
-            handleEditClick: () => handleEditClick(),
-            handleDeleteClick: () => handleDeleteClick(id),
+            ...newStepDetails.metadata.data,
+            onEditClick: () => handleEditClick(),
+            onDeleteClick: () => handleDeleteClick(newStepDetails.metadata.id),
           },
         },
         {
@@ -127,7 +125,7 @@ const TriggerSheet = ({
           position: { x: INITIAL_X + NODE_SPACING, y: INITIAL_Y },
           data: {
             onAddClick: () => {
-              setSelectedSourceNodeId(id);
+              setSelectedSourceNodeId(newStepDetails.metadata.id);
               setActionSheetOpen(true);
             },
           },
@@ -137,8 +135,8 @@ const TriggerSheet = ({
       setEdges((prev) => [
         ...prev,
         {
-          id: `${id}-${addActionButtonId}`,
-          source: id,
+          id: `${newStepDetails.metadata.id}-${addActionButtonId}`,
+          source: newStepDetails.metadata.id,
           target: addActionButtonId,
         },
       ]);

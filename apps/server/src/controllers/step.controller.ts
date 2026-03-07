@@ -12,7 +12,7 @@ export const addStep = asyncHandler(
   async (req: Request, res: Response, next: NextFunction) => {
     const { id: workflowId } = req.params;
     const body = addStepSchema.parse(req.body);
-    let { app, stepId, metadata, index, type, connectionId } = body;
+    let { app, eventName, metadata, index, type, connectionId } = body;
 
     const workflowDetails = await db.query.workflows.findFirst({
       where: and(eq(workflows.id, workflowId as string)),
@@ -26,12 +26,46 @@ export const addStep = asyncHandler(
       return next(CustomErrorHandler.notAllowed());
     }
 
-    if (app == AppType.SYSTEM && stepId == 'webhook') {
+    let [newStep] = await db
+      .insert(steps)
+      .values({
+        workflowId: workflowId as string,
+        app,
+        eventName,
+        metadata,
+        index: index,
+        type,
+        connectionId: connectionId || undefined,
+      })
+      .returning();
+
+    if (!newStep) {
+      return next(CustomErrorHandler.serverError());
+    }
+
+    metadata = {
+      ...metadata,
+      id: newStep.id,
+    };
+
+    const [updatedStep] = await db
+      .update(steps)
+      .set({ metadata })
+      .where(eq(steps.id, newStep.id))
+      .returning();
+    newStep = updatedStep;
+
+    if (!newStep) {
+      return next(CustomErrorHandler.serverError());
+    }
+
+    if (app == AppType.SYSTEM && eventName == 'webhook') {
       const path = nanoid();
       const [newWebhook] = await db
         .insert(webhooks)
         .values({
           workflowId: workflowId as string,
+          stepId: newStep.id,
           path,
         })
         .returning();
@@ -50,23 +84,13 @@ export const addStep = asyncHandler(
           },
         },
       };
-    }
 
-    const [newStep] = await db
-      .insert(steps)
-      .values({
-        workflowId: workflowId as string,
-        app,
-        stepId,
-        metadata,
-        index: index,
-        type,
-        connectionId: connectionId || undefined,
-      })
-      .returning();
-
-    if (!newStep) {
-      return next(CustomErrorHandler.serverError());
+      const [updatedStep] = await db
+        .update(steps)
+        .set({ metadata })
+        .where(eq(steps.id, newStep.id))
+        .returning();
+      newStep = updatedStep;
     }
 
     return res

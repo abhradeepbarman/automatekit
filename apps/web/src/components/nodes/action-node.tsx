@@ -15,8 +15,8 @@ type IActionNodeData = Node<
     actionId: string;
     index: number;
     fields: any;
-    handleEditClick: () => void;
-    handleDeleteClick: () => void;
+    onEditClick: () => void;
+    onDeleteClick: () => void;
   },
   'actionNode'
 >;
@@ -56,7 +56,7 @@ const ActionNode = ({ data }: NodeProps<IActionNodeData>) => {
               Edit
             </DropdownMenuItem> */}
             <DropdownMenuItem
-              onClick={data.handleDeleteClick}
+              onClick={data.onDeleteClick}
               variant="destructive"
             >
               <Trash2 className="h-4 w-4 mr-2" />
