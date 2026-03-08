@@ -48,7 +48,16 @@ const ConnectBtn = ({
     try {
       const { data } = await refetch();
       if (data && data.authUrl) {
-        window.open(data.authUrl, 'Authentication', 'width=500,height=600');
+        const width = 500;
+        const height = 600;
+
+        const left = window.screenX + (window.innerWidth - width) / 2;
+        const top = window.screenY + (window.innerHeight - height) / 2;
+        window.open(
+          data.authUrl,
+          'Authentication',
+          `width=${width},height=${height},left=${left},top=${top}`,
+        );
       }
     } catch (error) {
       console.error(error);
