@@ -6,6 +6,7 @@ import { AuthProvider } from './context/auth-context.tsx';
 import './index.css';
 import { Toaster } from './components/ui/toaster';
 import '@xyflow/react/dist/style.css';
+import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -23,5 +24,6 @@ createRoot(document.getElementById('root')!).render(
         <Toaster position="top-center" />
       </AuthProvider>
     </BrowserRouter>
+    <ReactQueryDevtools initialIsOpen={false} />
   </QueryClientProvider>,
 );

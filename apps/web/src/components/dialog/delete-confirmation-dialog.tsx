@@ -45,8 +45,8 @@ const DeleteConfirmationDialog = ({
   const { id: workflowId } = useParams();
   const { mutateAsync, isPending } = useMutation({
     mutationFn: (stepId: string) => stepService.deleteStep(stepId),
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({
+    onSuccess: () => {
+      queryClient.invalidateQueries({
         queryKey: ['workflow', workflowId],
       });
     },

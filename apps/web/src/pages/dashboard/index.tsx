@@ -320,6 +320,7 @@ const WorkflowItem = ({
     mutationFn: () => workflowService.deleteWorkflow(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['workflows'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
       toast.success('Workflow deleted successfully');
       setShowDeleteDialog(false);
     },

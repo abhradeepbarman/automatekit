@@ -9,7 +9,10 @@ import DeleteConfirmationDialog from '@/components/dialog/delete-confirmation-di
 import { Button } from '@/components/ui/button';
 import { INITIAL_X, INITIAL_Y, NODE_SPACING } from '@/constants/workflow';
 import workflowService from '@/services/workflow.service';
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import type { AxiosError } from 'axios';
+import { toast } from 'sonner';
+import { Switch } from '@/components/ui/switch';
 import {
   Background,
   Controls,
@@ -37,10 +40,33 @@ const nodeTypes = {
 export default function Workflow() {
   const navigate = useNavigate();
   const { id: workflowId } = useParams();
+  const queryClient = useQueryClient();
+
   const { data, isLoading } = useQuery({
     queryFn: () => workflowService.getWorkflow(workflowId!),
     queryKey: ['workflow', workflowId],
   });
+
+  const { mutate: toggleWorkflowStatus, isPending: isStatusPending } =
+    useMutation({
+      mutationFn: (newIsActive: boolean) =>
+        workflowService.updateWorkflow(workflowId!, undefined, newIsActive),
+      onSuccess: (_, newIsActive) => {
+        queryClient.invalidateQueries({ queryKey: ['workflow', workflowId] });
+        queryClient.invalidateQueries({ queryKey: ['workflows'] });
+        toast.success(
+          `Workflow ${newIsActive ? 'activated' : 'paused'} successfully`,
+        );
+      },
+      onError: (error: AxiosError<{ message: string }>) => {
+        console.error('Toggle status failed:', error);
+        toast.error('Status update failed', {
+          description:
+            error?.response?.data?.message ||
+            'Unable to update workflow status. Please try again.',
+        });
+      },
+    });
 
   const [nodes, setNodes] = useState<Node[]>([
     {
@@ -151,7 +177,19 @@ export default function Workflow() {
         </Button>
       </div>
 
-      <div className="absolute top-4 right-4 z-10">
+      <div className="absolute top-4 right-4 z-10 flex items-center gap-4">
+        {data && (
+          <div className="flex items-center gap-2 bg-background/80 backdrop-blur-sm px-3 py-1.5 rounded-md border text-sm">
+            <span className="text-muted-foreground mr-1">
+              {data.isActive ? 'Active' : 'Inactive'}
+            </span>
+            <Switch
+              checked={data.isActive}
+              onCheckedChange={toggleWorkflowStatus}
+              disabled={isStatusPending}
+            />
+          </div>
+        )}
         <Button
           variant="outline"
           size="sm"
