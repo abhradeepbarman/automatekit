@@ -87,6 +87,19 @@ const ActionSheet = ({
     return app?.actions?.find((a) => a.id === commonFields.actionId);
   }, [commonFields.appId, commonFields.actionId]);
 
+  const clearFields = () => {
+    setCommonFields({
+      appId: '',
+      actionId: '',
+      connectionId: '',
+    });
+    setCommonFieldsErr({
+      appId: '',
+      actionId: '',
+      connectionId: '',
+    });
+  };
+
   const onSubmit = async (fieldData: any) => {
     const { appId, actionId, connectionId } = commonFields;
 
@@ -194,6 +207,7 @@ const ActionSheet = ({
         description: 'The action has been added to your workflow.',
       });
 
+      clearFields();
       onOpenChange(false);
     } catch (error) {
       console.error('Failed to add action:', error);
@@ -212,16 +226,7 @@ const ActionSheet = ({
       onOpenChange={(isOpen) => {
         onOpenChange(isOpen);
         if (!isOpen) {
-          setCommonFields({
-            appId: '',
-            actionId: '',
-            connectionId: '',
-          });
-          setCommonFieldsErr({
-            appId: '',
-            actionId: '',
-            connectionId: '',
-          });
+          clearFields();
         }
       }}
     >

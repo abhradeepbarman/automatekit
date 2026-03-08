@@ -59,6 +59,20 @@ const TriggerSheet = ({
     connectionId: '',
   });
 
+  const clearFields = () => {
+    setCommonFields({
+      appId: '',
+      triggerId: '',
+      connectionId: '',
+    });
+
+    setCommonFieldsErr({
+      appId: '',
+      triggerId: '',
+      connectionId: '',
+    });
+  };
+
   const { mutateAsync, isPending } = useMutation({
     mutationKey: ['create-trigger'],
     mutationFn: (metadata: Node) =>
@@ -145,6 +159,7 @@ const TriggerSheet = ({
         description: 'The trigger has been added to your workflow.',
       });
 
+      clearFields();
       onOpenChange(false);
     } catch (error) {
       console.error('Failed to add trigger:', error);
@@ -170,16 +185,7 @@ const TriggerSheet = ({
       onOpenChange={(isOpen) => {
         onOpenChange(isOpen);
         if (!isOpen) {
-          setCommonFields({
-            appId: '',
-            triggerId: '',
-            connectionId: '',
-          });
-          setCommonFieldsErr({
-            appId: '',
-            triggerId: '',
-            connectionId: '',
-          });
+          clearFields();
         }
       }}
     >
