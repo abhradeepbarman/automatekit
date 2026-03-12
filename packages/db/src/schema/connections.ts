@@ -13,8 +13,15 @@ export const connections = pgTable('connections', {
       onUpdate: 'no action',
     }),
   app: varchar('app').notNull(),
-  accessToken: varchar('access_token').notNull(),
-  refreshToken: varchar('refresh_token'),
+
+  accessTokenEncrypt: varchar('access_token_encrypt').notNull(),
+  accessTokenIV: varchar('access_token_iv').notNull(),
+  accessTokenTag: varchar('access_token_tag').notNull(),
+
+  refreshTokenEncrypt: varchar('refresh_token_encrypt'),
+  refreshTokenIV: varchar('refresh_token_iv'),
+  refreshTokenTag: varchar('refresh_token_tag'),
+
   expiresAt: timestamp('expires_at'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),

@@ -9,6 +9,7 @@ import { and, eq } from 'drizzle-orm';
 import config from '../config';
 import { createExecutionLog } from '../helpers';
 import { getRefreshTokenAndUpdate } from './trigger-worker';
+import { decryptSymmetric } from '@repo/common/utils';
 
 export interface ActionJobData {
   stepIndex: number;
@@ -72,9 +73,15 @@ export const actionWorker = new Worker<ActionJobData>(
         return;
       }
 
+      const decryptedAccessToken = decryptSymmetric(
+        connectionDetails.accessTokenEncrypt,
+        connectionDetails.accessTokenIV,
+        connectionDetails.accessTokenTag,
+      );
+
       let result = await actionDetails.run({
         metadata: (stepDetails.metadata as any)?.data.fields,
-        accessToken: connectionDetails.accessToken,
+        accessToken: decryptedAccessToken,
         input,
       });
 

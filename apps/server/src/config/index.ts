@@ -9,6 +9,8 @@ const _config = {
   APP_URL: process.env.APP_URL || '',
   API_URL: process.env.API_URL || '',
 
+  ENCRYPTION_KEY: process.env.ENCRYPTION_KEY || '',
+
   MAIL_USER: process.env.MAIL_USER || '',
   MAIL_PASS: process.env.MAIL_PASS || '',
 

@@ -127,6 +127,20 @@
       "when": 1772902846282,
       "tag": "0017_complete_gorilla_man",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1773342408026,
+      "tag": "0018_wide_infant_terrible",
+      "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1773343499610,
+      "tag": "0019_little_thunderbird",
+      "breakpoints": true
     }
   ]
 }

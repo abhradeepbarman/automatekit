@@ -4,6 +4,7 @@ import { NextFunction, Request, Response } from 'express';
 import { asyncHandler, CustomErrorHandler, ResponseHandler } from '../utils';
 import db from '@repo/db';
 import { connections } from '@repo/db/schema';
+import { encryptSymmetric } from '@repo/common/utils';
 
 export const getAuthUrl = asyncHandler(
   async (req: Request, res: Response, next: NextFunction) => {
@@ -109,14 +110,31 @@ export const getTokenUrl = asyncHandler(
     }
 
     const { email, name } = await appDetails.auth.getUserInfo(access_token);
+    const {
+      ciphertext: accessCiphertext,
+      iv: accessIv,
+      tag: accessTag,
+    } = encryptSymmetric(access_token);
+    const {
+      ciphertext: refreshCiphertext,
+      iv: refreshIv,
+      tag: refreshTag,
+    } = encryptSymmetric(refresh_token ?? '');
 
     const [credentials] = await db
       .insert(connections)
       .values({
         app: appDetails.id,
         name: name ? `${name}(${email})` : email,
-        accessToken: access_token,
-        refreshToken: refresh_token || '',
+
+        accessTokenEncrypt: accessCiphertext,
+        accessTokenIV: accessIv,
+        accessTokenTag: accessTag,
+
+        refreshTokenEncrypt: refreshCiphertext,
+        refreshTokenIV: refreshIv,
+        refreshTokenTag: refreshTag,
+
         expiresAt: new Date(Date.now() + expires_in * 1000),
         userId: req.user.id,
       })

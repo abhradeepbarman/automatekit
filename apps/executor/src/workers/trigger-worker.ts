@@ -5,7 +5,7 @@ import {
   StepType,
   TokenResponse,
 } from '@repo/common/types';
-import { logger } from '@repo/common/utils';
+import { decryptSymmetric, encryptSymmetric, logger } from '@repo/common/utils';
 import db from '@repo/db';
 import { connections, steps, workflows } from '@repo/db/schema';
 import { actionQueue, actionQueueName, triggerQueueName } from '@repo/queue';
@@ -55,18 +55,41 @@ export async function getRefreshTokenAndUpdate(
     throw new Error('App has no auth');
   }
 
-  if (!connection.refreshToken) {
+  if (!connection.refreshTokenEncrypt) {
     throw new Error('Connection has no refresh token');
   }
 
+  const decryptedRefreshToken = decryptSymmetric(
+    connection.refreshTokenEncrypt,
+    connection.refreshTokenIV!,
+    connection.refreshTokenTag!,
+  );
+
   const { access_token, refresh_token, expires_in } =
-    await app.auth.refreshAccessToken(connection.refreshToken);
+    await app.auth.refreshAccessToken(decryptedRefreshToken);
+
+  const {
+    ciphertext: encryptedAccessToken,
+    iv: accessIV,
+    tag: accessTag,
+  } = encryptSymmetric(access_token);
+  const {
+    ciphertext: encryptedRefreshToken,
+    iv: refreshIV,
+    tag: refreshTag,
+  } = encryptSymmetric(refresh_token ?? '');
 
   await db
     .update(connections)
     .set({
-      accessToken: access_token,
-      refreshToken: refresh_token,
+      accessTokenEncrypt: encryptedAccessToken,
+      accessTokenIV: accessIV,
+      accessTokenTag: accessTag,
+
+      refreshTokenEncrypt: encryptedRefreshToken,
+      refreshTokenIV: refreshIV,
+      refreshTokenTag: refreshTag,
+
       expiresAt: new Date(Date.now() + expires_in * 1000),
     })
     .where(eq(connections.id, connectionId));
@@ -138,11 +161,16 @@ export const triggerWorker = new Worker<TriggerJobData>(
       );
 
       const jobId = nanoid();
+      const decryptedAccessToken = decryptSymmetric(
+        triggerDetails.connections?.accessTokenEncrypt!,
+        triggerDetails.connections?.accessTokenIV!,
+        triggerDetails.connections?.accessTokenTag!,
+      );
 
       let { success, message, statusCode } = await trigger.run({
         metadata: (triggerDetails.metadata as any).data.fields,
         lastExecutedAt: workflowDetails.lastExecutedAt,
-        accessToken: triggerDetails.connections?.accessToken || '',
+        accessToken: decryptedAccessToken || '',
         input: job.data.input,
       });
 

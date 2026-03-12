@@ -1,15 +1,10 @@
 import db from '@repo/db';
 import { webhooks, workflows } from '@repo/db/schema';
-import {
-  actionQueue,
-  actionQueueName,
-  triggerQueue,
-  triggerQueueName,
-} from '@repo/queue';
+import { actionQueue, actionQueueName } from '@repo/queue';
 import { and, eq } from 'drizzle-orm';
 import { NextFunction, Request, Response } from 'express';
-import { asyncHandler, CustomErrorHandler, ResponseHandler } from '../utils';
 import { nanoid } from 'nanoid';
+import { asyncHandler, CustomErrorHandler, ResponseHandler } from '../utils';
 
 export const webhookListener = asyncHandler(
   async (req: Request, res: Response, next: NextFunction) => {
