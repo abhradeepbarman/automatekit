@@ -1,4 +1,4 @@
-import axios, { AxiosError } from 'axios';
+import axios, { AxiosError, get } from 'axios';
 import {
   ConditionOperator,
   PollingInterval,
@@ -14,10 +14,47 @@ export interface NewEmailMetadata {
   value: string;
 }
 
-export const newEmail: ITrigger<NewEmailMetadata> = {
+export interface NewEmailDataAvailable {
+  id: { id: string; display: string };
+  threadId: { id: string; display: string };
+  subject: { id: string; display: string };
+  body: { id: string; display: string };
+  from: { id: string; display: string };
+  to: { id: string; display: string };
+  date: { id: string; display: string };
+  snippet: { id: string; display: string };
+}
+
+export interface NewEmailOutput {
+  id: string;
+  threadId: string;
+  subject: string;
+  body: string;
+  from: string;
+  to: string;
+  date: string;
+  snippet: string;
+}
+
+export const newEmail: ITrigger<
+  NewEmailMetadata,
+  NewEmailDataAvailable,
+  NewEmailOutput
+> = {
   id: 'new-email',
   name: 'New email',
   description: 'Triggered when a new email is received',
+
+  dataAvailable: {
+    id: { id: 'id', display: 'Message ID' },
+    threadId: { id: 'threadId', display: 'Thread ID' },
+    subject: { id: 'subject', display: 'Subject' },
+    body: { id: 'body', display: 'Body' },
+    from: { id: 'from', display: 'From' },
+    to: { id: 'to', display: 'To' },
+    date: { id: 'date', display: 'Date' },
+    snippet: { id: 'snippet', display: 'Snippet' },
+  },
 
   fields: [
     {
@@ -84,7 +121,7 @@ export const newEmail: ITrigger<NewEmailMetadata> = {
       }
 
       const detailedMessages = await Promise.all(
-        messages.map(async (msg: any) => {
+        messages.slice(0, 10).map(async (msg: any) => {
           try {
             const msgDetails = await axios.get(
               `https://www.googleapis.com/gmail/v1/users/me/messages/${msg.id}`,
@@ -95,8 +132,8 @@ export const newEmail: ITrigger<NewEmailMetadata> = {
               },
             );
             return msgDetails.data;
-          } catch (e) {
-            console.error(`Failed to fetch message ${msg.id}`, e);
+          } catch (e: any) {
+            console.error(`Failed to fetch message ERROR: ${e.message}`);
             return null;
           }
         }),
@@ -133,13 +170,25 @@ export const newEmail: ITrigger<NewEmailMetadata> = {
         };
       }
 
+      const message = validMessages[0];
+      const dataToPass: NewEmailOutput = {
+        id: message.id,
+        threadId: message.threadId,
+        subject: getHeader(message, 'subject'),
+        from: getHeader(message, 'from'),
+        to: getHeader(message, 'to'),
+        date: getHeader(message, 'date'),
+        snippet: message.snippet || '',
+        body: getBody(message),
+      };
       return {
         success: true,
         message: 'New emails found',
-        data: validMessages,
+        data: dataToPass,
         statusCode: 200,
       };
     } catch (error) {
+      console.error('Error executing new email trigger', error);
       if (error instanceof AxiosError) {
         return {
           success: false,
@@ -159,4 +208,32 @@ export const newEmail: ITrigger<NewEmailMetadata> = {
       };
     }
   },
+};
+
+const getHeader = (msg: any, name: string): string => {
+  const headers = msg.payload?.headers || [];
+  const header = headers.find(
+    (h: any) => h.name.toLowerCase() === name.toLowerCase(),
+  );
+  return header?.value || '';
+};
+
+const getBody = (msg: any): string => {
+  const payload = msg.payload;
+
+  if (!payload) return '';
+
+  if (payload.body?.data) {
+    return Buffer.from(payload.body.data, 'base64').toString('utf-8');
+  }
+
+  if (payload.parts) {
+    const part = payload.parts.find((p: any) => p.mimeType === 'text/plain');
+
+    if (part?.body?.data) {
+      return Buffer.from(part.body.data, 'base64').toString('utf-8');
+    }
+  }
+
+  return '';
 };

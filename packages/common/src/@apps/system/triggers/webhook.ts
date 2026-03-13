@@ -6,10 +6,32 @@ export interface IWebhookMetadata {
   input: unknown;
 }
 
-export const webhook: ITrigger<IWebhookMetadata> = {
+export interface WebhookDataAvailable {
+  input: {
+    id: string;
+    display: string;
+  };
+}
+
+export interface WebhookOutput {
+  input: unknown;
+}
+
+export const webhook: ITrigger<
+  IWebhookMetadata,
+  WebhookDataAvailable,
+  WebhookOutput
+> = {
   id: 'webhook',
   name: 'Webhook',
   description: 'Triggered when a webhook is received',
+
+  dataAvailable: {
+    input: {
+      id: 'INPUT',
+      display: 'Input',
+    },
+  },
 
   run: async (): Promise<ReturnResponse> => {
     try {

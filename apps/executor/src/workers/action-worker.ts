@@ -15,13 +15,13 @@ export interface ActionJobData {
   stepIndex: number;
   workflowId: string;
   jobId: string;
-  input?: unknown;
+  dataAvailable: any;
 }
 
 export const actionWorker = new Worker<ActionJobData>(
   actionQueueName,
   async (job: Job<ActionJobData>) => {
-    const { stepIndex, jobId, workflowId, input } = job.data;
+    const { stepIndex, jobId, workflowId, dataAvailable } = job.data;
     try {
       const stepDetails = await db.query.steps.findFirst({
         where: and(
@@ -82,27 +82,11 @@ export const actionWorker = new Worker<ActionJobData>(
       let result = await actionDetails.run({
         metadata: (stepDetails.metadata as any)?.data.fields,
         accessToken: decryptedAccessToken,
-        input,
+        input: dataAvailable,
       });
 
-      if (result.success && result.statusCode === 200) {
-        await createExecutionLog(
-          workflowId,
-          app.id,
-          actionDetails.id,
-          StepType.ACTION,
-          result.message ||
-            `Action ${actionDetails.name} completed successfully`,
-          jobId,
-          ExecutionStatus.COMPLETED,
-        );
-
-        await actionQueue.add(actionQueueName, {
-          stepIndex: stepIndex + 1,
-          workflowId,
-          jobId,
-        });
-      } else if (result.statusCode === 401) {
+      let dataToPass = result.data;
+      if (!result.success && result.statusCode === 401) {
         try {
           const { access_token } = await getRefreshTokenAndUpdate(
             connectionDetails.id,
@@ -113,26 +97,10 @@ export const actionWorker = new Worker<ActionJobData>(
             result = await actionDetails.run({
               metadata: (stepDetails.metadata as any)?.data.fields,
               accessToken: access_token,
+              input: dataAvailable,
             });
 
-            if (result.success && result.statusCode === 200) {
-              await createExecutionLog(
-                workflowId,
-                app.id,
-                actionDetails.id,
-                StepType.ACTION,
-                result.message ||
-                  `Action ${actionDetails.name} completed successfully`,
-                jobId,
-                ExecutionStatus.COMPLETED,
-              );
-
-              await actionQueue.add(actionQueueName, {
-                stepIndex: stepIndex + 1,
-                workflowId,
-                jobId,
-              });
-            } else {
+            if (!result.success && result.statusCode !== 200) {
               await createExecutionLog(
                 workflowId,
                 app.id,
@@ -142,7 +110,21 @@ export const actionWorker = new Worker<ActionJobData>(
                 jobId,
                 ExecutionStatus.FAILED,
               );
+              return;
             }
+
+            dataToPass = result.data;
+          } else {
+            await createExecutionLog(
+              workflowId,
+              app.id,
+              actionDetails.id,
+              StepType.ACTION,
+              'Failed to refresh token',
+              jobId,
+              ExecutionStatus.FAILED,
+            );
+            return;
           }
         } catch (refreshError) {
           logger.error('Error refreshing token: ' + refreshError);
@@ -155,8 +137,9 @@ export const actionWorker = new Worker<ActionJobData>(
             jobId,
             ExecutionStatus.FAILED,
           );
+          return;
         }
-      } else {
+      } else if (!result.success && result.statusCode !== 200) {
         logger.error(`Action ${actionDetails.name} failed: ${result.message}`);
         await createExecutionLog(
           workflowId,
@@ -167,7 +150,25 @@ export const actionWorker = new Worker<ActionJobData>(
           jobId,
           ExecutionStatus.FAILED,
         );
+        return;
       }
+
+      await createExecutionLog(
+        workflowId,
+        app.id,
+        actionDetails.id,
+        StepType.ACTION,
+        result.message || `Action ${actionDetails.name} completed successfully`,
+        jobId,
+        ExecutionStatus.COMPLETED,
+      );
+
+      await actionQueue.add(actionQueueName, {
+        stepIndex: stepIndex + 1,
+        workflowId,
+        jobId,
+        dataAvailable: dataToPass,
+      });
     } catch (error) {
       logger.error('Action worker error: ' + error);
     }

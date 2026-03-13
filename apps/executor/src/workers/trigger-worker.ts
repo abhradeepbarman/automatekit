@@ -12,8 +12,8 @@ import { actionQueue, actionQueueName, triggerQueueName } from '@repo/queue';
 import { Job, Worker } from 'bullmq';
 import { and, eq } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
-import { createExecutionLog } from '../helpers';
 import config from '../config';
+import { createExecutionLog } from '../helpers';
 
 interface TriggerJobData {
   workflowId: string;
@@ -25,7 +25,10 @@ function hasValidAuth(app: IApp, triggerDetails: any): boolean {
     return true;
   }
 
-  if (!triggerDetails.connections || !triggerDetails.connections.accessToken) {
+  if (
+    !triggerDetails.connections ||
+    !triggerDetails.connections.accessTokenEncrypt
+  ) {
     return false;
   }
 
@@ -161,45 +164,51 @@ export const triggerWorker = new Worker<TriggerJobData>(
       );
 
       const jobId = nanoid();
-      const decryptedAccessToken = decryptSymmetric(
+      let decryptedAccessToken = decryptSymmetric(
         triggerDetails.connections?.accessTokenEncrypt!,
         triggerDetails.connections?.accessTokenIV!,
         triggerDetails.connections?.accessTokenTag!,
       );
 
-      let { success, message, statusCode } = await trigger.run({
+      let { success, message, statusCode, data } = await trigger.run({
         metadata: (triggerDetails.metadata as any).data.fields,
         lastExecutedAt: workflowDetails.lastExecutedAt,
         accessToken: decryptedAccessToken || '',
         input: job.data.input,
       });
 
-      if (success && statusCode === 200) {
-        await createExecutionLog(
-          workflowDetails.id,
-          app.id,
-          trigger.id,
-          StepType.TRIGGER,
-          message ||
-            `Trigger ${triggerDetails.eventName} completed successfully`,
-          jobId,
-          ExecutionStatus.COMPLETED,
-        );
-
-        await actionQueue.add(actionQueueName, {
-          stepIndex: 1,
-          workflowId,
-          jobId,
-        });
-      } else if (!success && statusCode === 401) {
+      let dataToPass = data;
+      if (!success && statusCode === 401) {
         logger.info('Refreshing token');
 
-        let access_token: string | undefined;
         try {
-          ({ access_token } = await getRefreshTokenAndUpdate(
+          const tokenResonse = await getRefreshTokenAndUpdate(
             triggerDetails.connectionId!,
             app,
-          ));
+          );
+          decryptedAccessToken = tokenResonse.access_token;
+
+          const retryResult = await trigger.run({
+            metadata: (triggerDetails.metadata as any).data.fields,
+            lastExecutedAt: workflowDetails.lastExecutedAt,
+            accessToken: decryptedAccessToken,
+          });
+
+          if (!retryResult.success && retryResult.statusCode !== 200) {
+            logger.error(retryResult.message);
+            await createExecutionLog(
+              workflowDetails.id,
+              app.id,
+              trigger.id,
+              StepType.TRIGGER,
+              retryResult.message || `Trigger ${trigger.name} failed`,
+              jobId,
+              ExecutionStatus.FAILED,
+            );
+            return;
+          }
+
+          dataToPass = retryResult.data;
         } catch (refreshError) {
           logger.error('Failed to refresh token: ' + refreshError);
           await createExecutionLog(
@@ -213,43 +222,7 @@ export const triggerWorker = new Worker<TriggerJobData>(
           );
           return;
         }
-
-        const retryResult = await trigger.run({
-          metadata: (triggerDetails.metadata as any).data.fields,
-          lastExecutedAt: workflowDetails.lastExecutedAt,
-          accessToken: access_token,
-        });
-
-        if (retryResult.success && retryResult.statusCode === 200) {
-          await createExecutionLog(
-            workflowDetails.id,
-            app.id,
-            trigger.id,
-            StepType.TRIGGER,
-            retryResult.message ||
-              `Trigger ${trigger.name} completed successfully`,
-            jobId,
-            ExecutionStatus.COMPLETED,
-          );
-
-          await actionQueue.add(actionQueueName, {
-            stepIndex: 1,
-            workflowId,
-            jobId,
-          });
-        } else {
-          logger.error(retryResult.message);
-          await createExecutionLog(
-            workflowDetails.id,
-            app.id,
-            trigger.id,
-            StepType.TRIGGER,
-            retryResult.message || `Trigger ${trigger.name} failed`,
-            jobId,
-            ExecutionStatus.FAILED,
-          );
-        }
-      } else {
+      } else if (!success && statusCode !== 200) {
         await createExecutionLog(
           workflowDetails.id,
           app.id,
@@ -259,7 +232,25 @@ export const triggerWorker = new Worker<TriggerJobData>(
           jobId,
           ExecutionStatus.FAILED,
         );
+        return;
       }
+
+      await createExecutionLog(
+        workflowDetails.id,
+        app.id,
+        trigger.id,
+        StepType.TRIGGER,
+        message || `Trigger ${trigger.name} successful`,
+        jobId,
+        ExecutionStatus.COMPLETED,
+      );
+
+      await actionQueue.add(actionQueueName, {
+        stepIndex: 1,
+        workflowId,
+        jobId,
+        dataAvailable: dataToPass,
+      });
 
       await db
         .update(workflows)

@@ -71,28 +71,29 @@ export interface IApp {
   };
 }
 
-export interface ITrigger<T = any> {
+export interface ITrigger<T = any, TDataAvailable = any, TOutput = any> {
   id: string;
   name: string;
   description: string;
   fields?: FieldConfig[];
+  dataAvailable?: TDataAvailable;
   run: (params: {
     metadata: T;
     lastExecutedAt?: Date | null;
     accessToken?: string;
-    input?: unknown;
   }) => Promise<ReturnResponse> | ReturnResponse;
 }
 
-export interface IAction<T = any> {
+export interface IAction<T = any, TData = any | null, TOutput = any> {
   id: string;
   name: string;
   description: string;
   fields?: FieldConfig[];
+  dataAvailable?: TData;
   run: (params: {
     metadata: T;
     accessToken?: string;
-    input?: unknown;
+    input?: TOutput;
   }) => Promise<ReturnResponse> | ReturnResponse;
 }
 

@@ -8,10 +8,60 @@ export interface SendEmailMetadata {
   body: string;
 }
 
-export const sendEmail: IAction<SendEmailMetadata> = {
+export interface SendEmailDataAvailable {
+  to: {
+    id: string;
+    display: string;
+  };
+  subject: {
+    id: string;
+    display: string;
+  };
+  body: {
+    id: string;
+    display: string;
+  };
+  senderEmail: {
+    id: string;
+    display: string;
+  };
+}
+
+export interface SendEmailOutput {
+  messageId: string;
+  threadId: string;
+  to: string;
+  subject: string;
+  body: string;
+}
+
+export const sendEmail: IAction<
+  SendEmailMetadata,
+  SendEmailDataAvailable,
+  SendEmailOutput
+> = {
   id: 'send-email',
   name: 'Send Email',
   description: 'Send an email via Gmail',
+
+  dataAvailable: {
+    to: {
+      id: 'to',
+      display: 'Recipient Email',
+    },
+    subject: {
+      id: 'subject',
+      display: 'Subject',
+    },
+    body: {
+      id: 'body',
+      display: 'Body',
+    },
+    senderEmail: {
+      id: 'senderEmail',
+      display: 'Sender Email',
+    },
+  },
 
   fields: [
     {
@@ -37,11 +87,14 @@ export const sendEmail: IAction<SendEmailMetadata> = {
     },
   ],
 
-  run: async ({ metadata, accessToken }): Promise<ReturnResponse> => {
+  run: async ({ metadata, accessToken, input }): Promise<ReturnResponse> => {
     try {
-      const { to, subject, body } = metadata;
+      // TODO: replace input elements
+      console.log('input', input);
+      const to = metadata.to;
+      const subject = metadata.subject;
+      const body = metadata.body;
 
-      // Create the email in RFC 2822 format
       const email = [
         `To: ${to}`,
         `Subject: ${subject}`,
@@ -50,7 +103,6 @@ export const sendEmail: IAction<SendEmailMetadata> = {
         body,
       ].join('\r\n');
 
-      // Encode the email in base64url format
       const encodedEmail = Buffer.from(email)
         .toString('base64')
         .replace(/\+/g, '-')
@@ -59,9 +111,7 @@ export const sendEmail: IAction<SendEmailMetadata> = {
 
       const response = await axios.post(
         'https://gmail.googleapis.com/gmail/v1/users/me/messages/send',
-        {
-          raw: encodedEmail,
-        },
+        { raw: encodedEmail },
         {
           headers: {
             Authorization: `Bearer ${accessToken}`,
@@ -70,11 +120,19 @@ export const sendEmail: IAction<SendEmailMetadata> = {
         },
       );
 
+      const output: SendEmailOutput = {
+        messageId: response.data.id,
+        threadId: response.data.threadId,
+        to,
+        subject,
+        body,
+      };
+
       return {
         success: true,
         message: 'Email sent successfully',
         statusCode: 200,
-        data: response.data,
+        data: output,
       };
     } catch (error) {
       if (error instanceof AxiosError) {
