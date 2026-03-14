@@ -37,3 +37,30 @@ export async function createExecutionLog(
     return '';
   }
 }
+
+export function replaceVariables(
+  fields: { [key: string]: string },
+  variables: { id: string; data: string }[],
+) {
+  const variableMap: Record<string, string> = {};
+
+  Object.entries(variables).forEach(([key, value]) => {
+    variableMap[value.id] = value.data;
+  });
+
+  const result: any = {};
+
+  Object.keys(fields).forEach((key) => {
+    const value = fields[key];
+
+    if (typeof value === 'string') {
+      result[key] = value.replace(/{{(.*?)}}/g, (_, variableId) => {
+        return variableMap[variableId] ?? '';
+      });
+    } else {
+      result[key] = value;
+    }
+  });
+
+  return result;
+}

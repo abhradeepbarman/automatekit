@@ -8,46 +8,22 @@ export interface SendEmailMetadata {
   body: string;
 }
 
-export interface SendEmailDataAvailable {
-  to: {
-    id: string;
-    display: string;
-  };
-  subject: {
-    id: string;
-    display: string;
-  };
-  body: {
-    id: string;
-    display: string;
-  };
-  senderEmail: {
-    id: string;
-    display: string;
-  };
-}
-
 export interface SendEmailOutput {
-  messageId: string;
-  threadId: string;
-  to: string;
-  subject: string;
-  body: string;
+  receiverEmail: { id: string; data: string };
+  subject: { id: string; data: string };
+  body: { id: string; data: string };
+  senderEmail: { id: string; data: string };
 }
 
-export const sendEmail: IAction<
-  SendEmailMetadata,
-  SendEmailDataAvailable,
-  SendEmailOutput
-> = {
+export const sendEmail: IAction<SendEmailMetadata, SendEmailOutput> = {
   id: 'send-email',
   name: 'Send Email',
   description: 'Send an email via Gmail',
 
   dataAvailable: {
-    to: {
-      id: 'to',
-      display: 'Recipient Email',
+    receiverEmail: {
+      id: 'receiver-email',
+      display: 'Receiver Email',
     },
     subject: {
       id: 'subject',
@@ -58,7 +34,7 @@ export const sendEmail: IAction<
       display: 'Body',
     },
     senderEmail: {
-      id: 'senderEmail',
+      id: 'sender-email',
       display: 'Sender Email',
     },
   },
@@ -87,10 +63,9 @@ export const sendEmail: IAction<
     },
   ],
 
-  run: async ({ metadata, accessToken, input }): Promise<ReturnResponse> => {
+  run: async ({ metadata, accessToken }) => {
     try {
       // TODO: replace input elements
-      console.log('input', input);
       const to = metadata.to;
       const subject = metadata.subject;
       const body = metadata.body;
@@ -121,11 +96,10 @@ export const sendEmail: IAction<
       );
 
       const output: SendEmailOutput = {
-        messageId: response.data.id,
-        threadId: response.data.threadId,
-        to,
-        subject,
-        body,
+        receiverEmail: { id: 'receiver-email', data: to },
+        subject: { id: 'subject', data: subject },
+        body: { id: 'body', data: body },
+        senderEmail: { id: 'sender-email', data: response.data.sender },
       };
 
       return {

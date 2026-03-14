@@ -14,7 +14,7 @@ export interface ICreateWorkflowResponse {
 export interface IStep {
   id: string;
   type: string;
-  appId: string;
+  app: string;
   connectionId: string;
   workflowId: string;
   lastExecutedAt: string;

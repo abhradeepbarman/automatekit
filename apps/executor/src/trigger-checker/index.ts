@@ -1,9 +1,9 @@
 import { logger } from '@repo/common/utils';
 import db from '@repo/db';
 import { workflows } from '@repo/db/schema';
+import { triggerQueue, triggerQueueName } from '@repo/queue';
 import { eq } from 'drizzle-orm';
 import cron from 'node-cron';
-import { triggerQueue, triggerQueueName } from '@repo/queue';
 
 export function startTriggerChecker() {
   cron.schedule('* * * * *', async () => {

@@ -1,15 +1,14 @@
 import apps from '@repo/common/@apps';
 import { ExecutionStatus, StepType, type IApp } from '@repo/common/types';
-import { logger } from '@repo/common/utils';
+import { decryptSymmetric, logger } from '@repo/common/utils';
 import db from '@repo/db';
 import { connections, steps, workflows } from '@repo/db/schema';
 import { actionQueue, actionQueueName } from '@repo/queue';
 import { Job, Worker } from 'bullmq';
 import { and, eq } from 'drizzle-orm';
 import config from '../config';
-import { createExecutionLog } from '../helpers';
+import { createExecutionLog, replaceVariables } from '../helpers';
 import { getRefreshTokenAndUpdate } from './trigger-worker';
-import { decryptSymmetric } from '@repo/common/utils';
 
 export interface ActionJobData {
   stepIndex: number;
@@ -79,10 +78,11 @@ export const actionWorker = new Worker<ActionJobData>(
         connectionDetails.accessTokenTag,
       );
 
+      let metadata = (stepDetails.metadata as any)?.data.fields;
+      metadata = replaceVariables(metadata, dataAvailable);
       let result = await actionDetails.run({
-        metadata: (stepDetails.metadata as any)?.data.fields,
+        metadata,
         accessToken: decryptedAccessToken,
-        input: dataAvailable,
       });
 
       let dataToPass = result.data;
@@ -97,7 +97,6 @@ export const actionWorker = new Worker<ActionJobData>(
             result = await actionDetails.run({
               metadata: (stepDetails.metadata as any)?.data.fields,
               accessToken: access_token,
-              input: dataAvailable,
             });
 
             if (!result.success && result.statusCode !== 200) {

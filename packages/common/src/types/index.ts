@@ -1,9 +1,9 @@
-export interface ReturnResponse {
+export interface ReturnResponse<T = any | null> {
   success: boolean;
   message: string;
   error?: string;
   statusCode: number;
-  data?: any;
+  data?: T;
 }
 
 export enum ExecutionStatus {
@@ -71,7 +71,14 @@ export interface IApp {
   };
 }
 
-export interface ITrigger<T = any, TDataAvailable = any, TOutput = any> {
+export type TDataAvailable = {
+  [key: string]: {
+    id: string;
+    display: string;
+  };
+};
+
+export interface ITrigger<T = any, TOutput = any> {
   id: string;
   name: string;
   description: string;
@@ -81,20 +88,19 @@ export interface ITrigger<T = any, TDataAvailable = any, TOutput = any> {
     metadata: T;
     lastExecutedAt?: Date | null;
     accessToken?: string;
-  }) => Promise<ReturnResponse> | ReturnResponse;
+  }) => Promise<ReturnResponse<TOutput>> | ReturnResponse<TOutput>;
 }
 
-export interface IAction<T = any, TData = any | null, TOutput = any> {
+export interface IAction<T = any, TOutput = any> {
   id: string;
   name: string;
   description: string;
   fields?: FieldConfig[];
-  dataAvailable?: TData;
+  dataAvailable?: TDataAvailable;
   run: (params: {
     metadata: T;
     accessToken?: string;
-    input?: TOutput;
-  }) => Promise<ReturnResponse> | ReturnResponse;
+  }) => Promise<ReturnResponse<TOutput>> | ReturnResponse<TOutput>;
 }
 
 export enum PollingInterval {

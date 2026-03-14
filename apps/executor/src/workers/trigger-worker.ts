@@ -174,7 +174,6 @@ export const triggerWorker = new Worker<TriggerJobData>(
         metadata: (triggerDetails.metadata as any).data.fields,
         lastExecutedAt: workflowDetails.lastExecutedAt,
         accessToken: decryptedAccessToken || '',
-        input: job.data.input,
       });
 
       let dataToPass = data;

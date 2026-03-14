@@ -1,6 +1,5 @@
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Input } from '@/components/ui/input';
 import {
   Select,
   SelectContent,
@@ -15,6 +14,7 @@ import { useMemo } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { Field, FieldError, FieldLabel } from '../ui/field';
+import { Input } from '../ui/input';
 
 interface DynamicFormProps {
   fields: FieldConfig[] | undefined;
@@ -22,6 +22,7 @@ interface DynamicFormProps {
   submitLabel: string;
   isLoading: boolean;
   connectionId?: string;
+  variables?: Record<string, { id: string; display: string }>;
 }
 
 const DynamicForm = ({
@@ -29,6 +30,7 @@ const DynamicForm = ({
   onSubmit,
   submitLabel,
   isLoading,
+  variables,
 }: DynamicFormProps) => {
   const schema = useMemo(() => {
     const schemaFields: Record<string, z.ZodTypeAny> = {};

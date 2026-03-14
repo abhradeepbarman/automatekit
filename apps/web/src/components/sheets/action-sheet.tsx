@@ -1,8 +1,8 @@
 import { NODE_SPACING } from '@/constants/workflow';
 import stepService from '@/services/step.service';
 import apps from '@repo/common/@apps';
-import { StepType } from '@repo/common/types';
-import { useMutation } from '@tanstack/react-query';
+import { StepType, type TDataAvailable } from '@repo/common/types';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import type { Edge, Node } from '@xyflow/react';
 import { useMemo, useState, type Dispatch, type SetStateAction } from 'react';
 import { useParams } from 'react-router-dom';
@@ -25,6 +25,14 @@ import {
   SheetHeader,
   SheetTitle,
 } from '../ui/sheet';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '../ui/tooltip';
+import { Badge } from '../ui/badge';
+import { Copy } from 'lucide-react';
 
 interface IActionSheetProps {
   open: boolean;
@@ -37,6 +45,7 @@ interface IActionSheetProps {
   setActionSheetOpen: Dispatch<SetStateAction<boolean>>;
   handleEditClick: () => void;
   handleDeleteClick: (nodeId: string) => void;
+  dataAvailable?: TDataAvailable;
 }
 
 const ActionSheet = ({
@@ -50,7 +59,9 @@ const ActionSheet = ({
   setActionSheetOpen,
   handleEditClick,
   handleDeleteClick,
+  dataAvailable,
 }: IActionSheetProps) => {
+  const queryClient = useQueryClient();
   const { id: workflowId } = useParams();
   const [commonFields, setCommonFields] = useState({
     appId: '',
@@ -78,6 +89,11 @@ const ActionSheet = ({
         commonFields.connectionId,
         metadata,
       );
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: ['workflow', workflowId],
+      });
     },
   });
 
@@ -220,6 +236,11 @@ const ActionSheet = ({
     }
   };
 
+  const variables = Object.values(dataAvailable || {}).map((v) => ({
+    id: v.id,
+    display: v.display || v.id,
+  }));
+
   return (
     <Sheet
       open={open}
@@ -346,6 +367,55 @@ const ActionSheet = ({
             </Field>
           )}
 
+          {commonFields.appId &&
+            commonFields.actionId &&
+            dataAvailable &&
+            Object.keys(dataAvailable).length > 0 && (
+              <div className="mt-5 space-y-3">
+                <div className="flex items-center justify-between">
+                  <p className="text-sm font-medium leading-none">
+                    Data from previous step
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Click to copy{' '}
+                    <code className="text-xs font-mono text-primary">
+                      {'{{key}}'}
+                    </code>
+                  </p>
+                </div>
+
+                <TooltipProvider>
+                  <div className="flex flex-wrap gap-2">
+                    {Object.entries(dataAvailable).map(([key, value]) => (
+                      <Tooltip key={key}>
+                        <TooltipTrigger asChild>
+                          <Badge
+                            variant="secondary"
+                            className="cursor-pointer hover:bg-secondary/80 active:scale-95 transition-all flex items-center gap-1.5 pl-2.5 pr-2 py-1 text-sm group"
+                            onClick={() => {
+                              navigator.clipboard.writeText(`{{${value.id}}}`);
+                              toast.success(`Copied {{ ${value.id} }}`);
+                            }}
+                          >
+                            <span className="text-xs text-muted-foreground/90 max-w-40 truncate">
+                              {value?.display || value.id}
+                            </span>
+
+                            <Copy className="h-3.5 w-3.5 opacity-40 group-hover:opacity-80 transition-opacity" />
+                          </Badge>
+                        </TooltipTrigger>
+
+                        <TooltipContent side="top" className="text-xs max-w-xs">
+                          Click to copy{' '}
+                          <span className="font-mono">{`{{${value.id}}}`}</span>
+                        </TooltipContent>
+                      </Tooltip>
+                    ))}
+                  </div>
+                </TooltipProvider>
+              </div>
+            )}
+
           {selectedAction && (
             <div className="mt-6 space-y-4">
               <div className="border-t pt-6">
@@ -359,6 +429,7 @@ const ActionSheet = ({
                       onSubmit={onSubmit}
                       submitLabel="Add Action"
                       isLoading={isPending}
+                      variables={variables}
                     />
                   </>
                 ) : (

@@ -1,11 +1,10 @@
-import axios, { AxiosError, get } from 'axios';
+import axios, { AxiosError } from 'axios';
+import { z } from 'zod';
 import {
   ConditionOperator,
   PollingInterval,
-  type ReturnResponse,
   type ITrigger,
 } from '../../../types';
-import { z } from 'zod';
 
 export interface NewEmailMetadata {
   intervalMs: PollingInterval;
@@ -14,44 +13,53 @@ export interface NewEmailMetadata {
   value: string;
 }
 
-export interface NewEmailDataAvailable {
-  id: { id: string; display: string };
-  threadId: { id: string; display: string };
-  subject: { id: string; display: string };
-  body: { id: string; display: string };
-  from: { id: string; display: string };
-  to: { id: string; display: string };
-  date: { id: string; display: string };
-  snippet: { id: string; display: string };
-}
-
 export interface NewEmailOutput {
-  id: string;
-  threadId: string;
-  subject: string;
-  body: string;
-  from: string;
-  to: string;
-  date: string;
-  snippet: string;
+  messageId: {
+    id: string;
+    data: string;
+  };
+  threadId: {
+    id: string;
+    data: string;
+  };
+  subject: {
+    id: string;
+    data: string;
+  };
+  body: {
+    id: string;
+    data: string;
+  };
+  from: {
+    id: string;
+    data: string;
+  };
+  to: {
+    id: string;
+    data: string;
+  };
+  date: {
+    id: string;
+    data: string;
+  };
+  snippet: {
+    id: string;
+    data: string;
+  };
 }
 
-export const newEmail: ITrigger<
-  NewEmailMetadata,
-  NewEmailDataAvailable,
-  NewEmailOutput
-> = {
+export const newEmail: ITrigger<NewEmailMetadata, NewEmailOutput> = {
   id: 'new-email',
   name: 'New email',
   description: 'Triggered when a new email is received',
 
   dataAvailable: {
-    id: { id: 'id', display: 'Message ID' },
-    threadId: { id: 'threadId', display: 'Thread ID' },
+    messageId: { id: 'message-id', display: 'Message ID' },
+    threadId: { id: 'thread-id', display: 'Thread ID' },
     subject: { id: 'subject', display: 'Subject' },
     body: { id: 'body', display: 'Body' },
-    from: { id: 'from', display: 'From' },
-    to: { id: 'to', display: 'To' },
+    senderEmail: { id: 'sender-email', display: 'Sender email' },
+    receiverEmail: { id: 'receiver-email', display: 'Receiver email' },
     date: { id: 'date', display: 'Date' },
     snippet: { id: 'snippet', display: 'Snippet' },
   },
@@ -85,11 +93,7 @@ export const newEmail: ITrigger<
     },
   ],
 
-  run: async ({
-    metadata,
-    lastExecutedAt,
-    accessToken,
-  }): Promise<ReturnResponse> => {
+  run: async ({ metadata, lastExecutedAt, accessToken }) => {
     try {
       const { field, operator, value } = metadata;
       const lastExecuted = lastExecutedAt ? new Date(lastExecutedAt) : null;
@@ -172,20 +176,45 @@ export const newEmail: ITrigger<
 
       const message = validMessages[0];
       const dataToPass: NewEmailOutput = {
-        id: message.id,
-        threadId: message.threadId,
-        subject: getHeader(message, 'subject'),
-        from: getHeader(message, 'from'),
-        to: getHeader(message, 'to'),
-        date: getHeader(message, 'date'),
-        snippet: message.snippet || '',
-        body: getBody(message),
+        messageId: {
+          id: 'message-id',
+          data: message.id,
+        },
+        threadId: {
+          id: 'thread-id',
+          data: message.threadId,
+        },
+        subject: {
+          id: 'subject',
+          data: getHeader(message, 'subject'),
+        },
+        from: {
+          id: 'from',
+          data: getHeader(message, 'from'),
+        },
+        to: {
+          id: 'to',
+          data: getHeader(message, 'to'),
+        },
+        date: {
+          id: 'date',
+          data: getHeader(message, 'date'),
+        },
+        snippet: {
+          id: 'snippet',
+          data: message.snippet,
+        },
+        body: {
+          id: 'body',
+          data: getBody(message),
+        },
       };
+
       return {
         success: true,
         message: 'New emails found',
-        data: dataToPass,
         statusCode: 200,
+        data: dataToPass,
       };
     } catch (error) {
       console.error('Error executing new email trigger', error);

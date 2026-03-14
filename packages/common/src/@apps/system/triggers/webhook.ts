@@ -5,35 +5,26 @@ export interface IWebhookMetadata {
   path: string;
   input: unknown;
 }
-
-export interface WebhookDataAvailable {
+export interface WebhookOutput {
   input: {
     id: string;
-    display: string;
+    data: unknown;
   };
 }
 
-export interface WebhookOutput {
-  input: unknown;
-}
-
-export const webhook: ITrigger<
-  IWebhookMetadata,
-  WebhookDataAvailable,
-  WebhookOutput
-> = {
+export const webhook: ITrigger<IWebhookMetadata, WebhookOutput> = {
   id: 'webhook',
   name: 'Webhook',
   description: 'Triggered when a webhook is received',
 
   dataAvailable: {
     input: {
-      id: 'INPUT',
+      id: 'input',
       display: 'Input',
     },
   },
 
-  run: async (): Promise<ReturnResponse> => {
+  run: async () => {
     try {
       return {
         success: true,

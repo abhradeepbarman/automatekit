@@ -2,9 +2,9 @@ import { INITIAL_X, INITIAL_Y, NODE_SPACING } from '@/constants/workflow';
 import stepService from '@/services/step.service';
 import apps from '@repo/common/@apps';
 import { StepType } from '@repo/common/types';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import type { Edge, Node } from '@xyflow/react';
-import { useMemo, useState, type Dispatch, type SetStateAction } from 'react';
+import { useState, type Dispatch, type SetStateAction } from 'react';
 import { useParams } from 'react-router-dom';
 import { toast } from 'sonner';
 import ConnectBtn from '../common/connect-btn';
@@ -47,6 +47,7 @@ const TriggerSheet = ({
   handleEditClick,
   handleDeleteClick,
 }: ITriggerSheetProps) => {
+  const queryClient = useQueryClient();
   const { id: workflowId } = useParams();
   const [commonFields, setCommonFields] = useState({
     appId: '',
@@ -85,6 +86,11 @@ const TriggerSheet = ({
         commonFields.connectionId,
         metadata,
       ),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: ['workflow', workflowId],
+      });
+    },
   });
 
   const onSubmit = async (fieldData: any) => {
@@ -173,11 +179,9 @@ const TriggerSheet = ({
   };
 
   const appDetails = apps.find((app) => app.id === commonFields.appId);
-  const triggerDetails = useMemo(() => {
-    return appDetails?.triggers?.find(
-      (trigger) => trigger.id === commonFields.triggerId,
-    );
-  }, [commonFields.triggerId, appDetails]);
+  const triggerDetails = appDetails?.triggers?.find(
+    (trigger) => trigger.id === commonFields.triggerId,
+  );
 
   return (
     <Sheet

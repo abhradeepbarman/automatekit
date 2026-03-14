@@ -31,7 +31,10 @@ export const webhookListener = asyncHandler(
       workflowId: workflowDetails.id,
       stepIndex: 1,
       jobId: nanoid(),
-      dataAvailable: body,
+      dataAvailable: {
+        id: 'input',
+        data: body,
+      },
     });
 
     return res

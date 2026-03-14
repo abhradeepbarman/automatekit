@@ -1,18 +1,18 @@
+import DeleteConfirmationDialog from '@/components/dialog/delete-confirmation-dialog';
 import ActionNode from '@/components/nodes/action-node';
 import AddActionButtonNode from '@/components/nodes/add-action-button-node';
 import AddTriggerButtonNode from '@/components/nodes/add-trigger-button-node';
 import TriggerNode from '@/components/nodes/trigger-node';
 import ActionSheet from '@/components/sheets/action-sheet';
-import TriggerSheet from '@/components/sheets/trigger-sheet';
 import LogsSheet from '@/components/sheets/logs-sheet';
-import DeleteConfirmationDialog from '@/components/dialog/delete-confirmation-dialog';
+import TriggerSheet from '@/components/sheets/trigger-sheet';
 import { Button } from '@/components/ui/button';
+import { Switch } from '@/components/ui/switch';
 import { INITIAL_X, INITIAL_Y, NODE_SPACING } from '@/constants/workflow';
 import workflowService from '@/services/workflow.service';
+import apps from '@repo/common/@apps';
+import { StepType } from '@repo/common/types';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import type { AxiosError } from 'axios';
-import { toast } from 'sonner';
-import { Switch } from '@/components/ui/switch';
 import {
   Background,
   Controls,
@@ -26,9 +26,11 @@ import {
   type OnNodesChange,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
+import type { AxiosError } from 'axios';
 import { ArrowLeft, FileText } from 'lucide-react';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { toast } from 'sonner';
 
 const nodeTypes = {
   triggerNode: TriggerNode,
@@ -163,6 +165,24 @@ export default function Workflow() {
     }
   }, [data]);
 
+  const dataAvailable = useMemo(() => {
+    const stepDetails = data?.steps.find(
+      (step) => step.id === selectedSourceNodeId,
+    );
+    const appDetails = apps.find((app) => app.id === stepDetails?.app);
+    if (stepDetails?.type == StepType.TRIGGER) {
+      const triggerDetails = appDetails?.triggers?.find(
+        (trigger) => trigger.id === stepDetails.eventName,
+      );
+      return triggerDetails?.dataAvailable;
+    } else {
+      const actionDetails = appDetails?.actions?.find(
+        (action) => action.id === stepDetails?.eventName,
+      );
+      return actionDetails?.dataAvailable;
+    }
+  }, [selectedSourceNodeId, data?.steps]);
+
   return (
     <div className="w-screen h-screen flex flex-col">
       <div className="absolute top-4 left-4 z-10">
@@ -251,6 +271,7 @@ export default function Workflow() {
         setActionSheetOpen={setActionSheetOpen}
         handleEditClick={handleEditClick}
         handleDeleteClick={handleDeleteClick}
+        dataAvailable={dataAvailable}
       />
 
       <DeleteConfirmationDialog
