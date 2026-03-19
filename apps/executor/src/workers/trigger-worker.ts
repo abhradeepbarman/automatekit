@@ -172,7 +172,8 @@ export const triggerWorker = new Worker<TriggerJobData>(
 
       let { success, message, statusCode, data } = await trigger.run({
         metadata: (triggerDetails.metadata as any).data.fields,
-        lastExecutedAt: workflowDetails.lastExecutedAt,
+        lastExecutedAt:
+          workflowDetails.lastExecutedAt || workflowDetails.activatedAt!,
         accessToken: decryptedAccessToken || '',
       });
 
@@ -189,7 +190,8 @@ export const triggerWorker = new Worker<TriggerJobData>(
 
           const retryResult = await trigger.run({
             metadata: (triggerDetails.metadata as any).data.fields,
-            lastExecutedAt: workflowDetails.lastExecutedAt,
+            lastExecutedAt:
+              workflowDetails.lastExecutedAt || workflowDetails.activatedAt!,
             accessToken: decryptedAccessToken,
           });
 

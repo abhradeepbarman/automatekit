@@ -1,7 +1,7 @@
 export interface ReturnResponse<T = any | null> {
   success: boolean;
   message: string;
-  error?: string;
+  error?: Error;
   statusCode: number;
   data?: T;
 }
@@ -71,36 +71,61 @@ export interface IApp {
   };
 }
 
-export type TDataAvailable = {
-  [key: string]: {
-    id: string;
-    display: string;
-  };
+export type FieldTypeMap = {
+  string: string;
+  number: number;
+  boolean: boolean;
+  date: Date;
+  object: Record<string, any>;
 };
 
-export interface ITrigger<T = any, TOutput = any> {
-  id: string;
-  name: string;
-  description: string;
-  fields?: FieldConfig[];
-  dataAvailable?: TDataAvailable;
-  run: (params: {
-    metadata: T;
-    lastExecutedAt?: Date | null;
-    accessToken?: string;
-  }) => Promise<ReturnResponse<TOutput>> | ReturnResponse<TOutput>;
+export interface IDataField<
+  K extends string = string,
+  T extends keyof FieldTypeMap = keyof FieldTypeMap,
+> {
+  key: K;
+  label: string;
+  type: T;
 }
 
-export interface IAction<T = any, TOutput = any> {
+export type SchemaToData<T extends readonly IDataField[]> = {
+  [K in T[number] as K['key']]: FieldTypeMap[K['type']];
+};
+
+export interface ITrigger<
+  TMeta = any,
+  TSchema extends readonly IDataField[] = readonly IDataField[],
+> {
   id: string;
   name: string;
   description: string;
   fields?: FieldConfig[];
-  dataAvailable?: TDataAvailable;
+  dataAvailable?: TSchema;
   run: (params: {
-    metadata: T;
+    metadata: TMeta;
+    lastExecutedAt: Date;
     accessToken?: string;
-  }) => Promise<ReturnResponse<TOutput>> | ReturnResponse<TOutput>;
+  }) =>
+    | Promise<ReturnResponse<SchemaToData<TSchema>>>
+    | ReturnResponse<SchemaToData<TSchema>>;
+}
+
+export interface IAction<
+  TMeta = any,
+  TSchema extends readonly IDataField[] = readonly IDataField[],
+> {
+  id: string;
+  name: string;
+  description: string;
+  fields?: FieldConfig[];
+  dataAvailable?: TSchema;
+  run: (params: {
+    metadata: TMeta;
+    accessToken?: string;
+  }) => Promise<
+    | ReturnResponse<SchemaToData<TSchema>>
+    | ReturnResponse<SchemaToData<TSchema>>
+  >;
 }
 
 export enum PollingInterval {

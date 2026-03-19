@@ -1,14 +1,20 @@
 import { NODE_SPACING } from '@/constants/workflow';
 import stepService from '@/services/step.service';
 import apps from '@repo/common/@apps';
-import { StepType, type TDataAvailable } from '@repo/common/types';
+import {
+  StepType,
+  type FieldTypeMap,
+  type IDataField,
+} from '@repo/common/types';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import type { Edge, Node } from '@xyflow/react';
+import { Copy } from 'lucide-react';
 import { useMemo, useState, type Dispatch, type SetStateAction } from 'react';
 import { useParams } from 'react-router-dom';
 import { toast } from 'sonner';
 import ConnectBtn from '../common/connect-btn';
 import DynamicForm from '../common/dynamic-form';
+import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
 import { Field, FieldError, FieldLabel } from '../ui/field';
 import {
@@ -31,8 +37,6 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '../ui/tooltip';
-import { Badge } from '../ui/badge';
-import { Copy } from 'lucide-react';
 
 interface IActionSheetProps {
   open: boolean;
@@ -45,7 +49,7 @@ interface IActionSheetProps {
   setActionSheetOpen: Dispatch<SetStateAction<boolean>>;
   handleEditClick: () => void;
   handleDeleteClick: (nodeId: string) => void;
-  dataAvailable?: TDataAvailable;
+  dataAvailable?: readonly IDataField<string, keyof FieldTypeMap>[];
 }
 
 const ActionSheet = ({
@@ -236,11 +240,6 @@ const ActionSheet = ({
     }
   };
 
-  const variables = Object.values(dataAvailable || {}).map((v) => ({
-    id: v.id,
-    display: v.display || v.id,
-  }));
-
   return (
     <Sheet
       open={open}
@@ -386,19 +385,19 @@ const ActionSheet = ({
 
                 <TooltipProvider>
                   <div className="flex flex-wrap gap-2">
-                    {Object.entries(dataAvailable).map(([key, value]) => (
-                      <Tooltip key={key}>
+                    {dataAvailable.map((data, index) => (
+                      <Tooltip key={index}>
                         <TooltipTrigger asChild>
                           <Badge
                             variant="secondary"
                             className="cursor-pointer hover:bg-secondary/80 active:scale-95 transition-all flex items-center gap-1.5 pl-2.5 pr-2 py-1 text-sm group"
                             onClick={() => {
-                              navigator.clipboard.writeText(`{{${value.id}}}`);
-                              toast.success(`Copied {{ ${value.id} }}`);
+                              navigator.clipboard.writeText(`{{${data.key}}}`);
+                              toast.success(`Copied {{ ${data.key} }}`);
                             }}
                           >
                             <span className="text-xs text-muted-foreground/90 max-w-40 truncate">
-                              {value?.display || value.id}
+                              {data.label}
                             </span>
 
                             <Copy className="h-3.5 w-3.5 opacity-40 group-hover:opacity-80 transition-opacity" />
@@ -407,7 +406,7 @@ const ActionSheet = ({
 
                         <TooltipContent side="top" className="text-xs max-w-xs">
                           Click to copy{' '}
-                          <span className="font-mono">{`{{${value.id}}}`}</span>
+                          <span className="font-mono">{`{{${data.key}}}`}</span>
                         </TooltipContent>
                       </Tooltip>
                     ))}
@@ -429,7 +428,7 @@ const ActionSheet = ({
                       onSubmit={onSubmit}
                       submitLabel="Add Action"
                       isLoading={isPending}
-                      variables={variables}
+                      variables={dataAvailable}
                     />
                   </>
                 ) : (

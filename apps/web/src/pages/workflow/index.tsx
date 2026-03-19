@@ -11,7 +11,7 @@ import { Switch } from '@/components/ui/switch';
 import { INITIAL_X, INITIAL_Y, NODE_SPACING } from '@/constants/workflow';
 import workflowService from '@/services/workflow.service';
 import apps from '@repo/common/@apps';
-import { StepType } from '@repo/common/types';
+import { StepType, type IDataField } from '@repo/common/types';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   Background,
@@ -179,7 +179,7 @@ export default function Workflow() {
       const actionDetails = appDetails?.actions?.find(
         (action) => action.id === stepDetails?.eventName,
       );
-      return actionDetails?.dataAvailable;
+      return actionDetails?.dataAvailable as IDataField[];
     }
   }, [selectedSourceNodeId, data?.steps]);
 

@@ -20,6 +20,7 @@ export const workflows = pgTable('workflows', {
     })
     .notNull(),
   isActive: boolean('is_active').notNull().default(false),
+  activatedAt: timestamp('activated_at'),
   lastExecutedAt: timestamp('last_executed_at'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),

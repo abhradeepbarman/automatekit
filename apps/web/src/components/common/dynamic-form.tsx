@@ -8,13 +8,18 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { type FieldConfig } from '@repo/common/types';
+import {
+  type FieldConfig,
+  type FieldTypeMap,
+  type IDataField,
+} from '@repo/common/types';
 import { LoaderCircle } from 'lucide-react';
 import { useMemo } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { Field, FieldError, FieldLabel } from '../ui/field';
 import { Input } from '../ui/input';
+import { Textarea } from '../ui/textarea';
 
 interface DynamicFormProps {
   fields: FieldConfig[] | undefined;
@@ -22,7 +27,7 @@ interface DynamicFormProps {
   submitLabel: string;
   isLoading: boolean;
   connectionId?: string;
-  variables?: Record<string, { id: string; display: string }>;
+  variables?: readonly IDataField<string, keyof FieldTypeMap>[];
 }
 
 const DynamicForm = ({
@@ -30,7 +35,6 @@ const DynamicForm = ({
   onSubmit,
   submitLabel,
   isLoading,
-  variables,
 }: DynamicFormProps) => {
   const schema = useMemo(() => {
     const schemaFields: Record<string, z.ZodTypeAny> = {};
@@ -73,12 +77,21 @@ const DynamicForm = ({
     return (
       <Field key={field.name}>
         <FieldLabel>{field.label}</FieldLabel>
-        <Input
-          type={field.type}
-          placeholder={field.placeholder}
-          disabled={field.disabled}
-          {...form.register(field.name)}
+
+        <Controller
+          control={form.control}
+          name={field.name}
+          render={({ field: controllerField }) => (
+            <Input
+              type={field.type}
+              value={controllerField.value || ''}
+              onChange={controllerField.onChange}
+              placeholder={field.placeholder}
+              disabled={field.disabled}
+            />
+          )}
         />
+
         {form.formState.errors[field.name] && (
           <FieldError errors={[form.formState.errors[field.name] as any]} />
         )}
@@ -90,12 +103,20 @@ const DynamicForm = ({
     return (
       <Field key={field.name}>
         <FieldLabel>{field.label}</FieldLabel>
-        <textarea
-          {...form.register(field.name)}
-          placeholder={field.placeholder}
-          disabled={field.disabled}
-          className="min-h-20 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+
+        <Controller
+          control={form.control}
+          name={field.name}
+          render={({ field: controllerField }) => (
+            <Textarea
+              value={controllerField.value || ''}
+              onChange={controllerField.onChange}
+              placeholder={field.placeholder}
+              disabled={field.disabled}
+            />
+          )}
         />
+
         {form.formState.errors[field.name] && (
           <FieldError errors={[form.formState.errors[field.name] as any]} />
         )}

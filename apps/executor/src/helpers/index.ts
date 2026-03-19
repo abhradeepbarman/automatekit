@@ -39,15 +39,9 @@ export async function createExecutionLog(
 }
 
 export function replaceVariables(
-  fields: { [key: string]: string },
-  variables: { id: string; data: string }[],
+  fields: Record<string, any>,
+  variables: Record<string, string>,
 ) {
-  const variableMap: Record<string, string> = {};
-
-  Object.entries(variables).forEach(([key, value]) => {
-    variableMap[value.id] = value.data;
-  });
-
   const result: any = {};
 
   Object.keys(fields).forEach((key) => {
@@ -55,7 +49,8 @@ export function replaceVariables(
 
     if (typeof value === 'string') {
       result[key] = value.replace(/{{(.*?)}}/g, (_, variableId) => {
-        return variableMap[variableId] ?? '';
+        const key = variableId.trim();
+        return variables[key] ?? '';
       });
     } else {
       result[key] = value;

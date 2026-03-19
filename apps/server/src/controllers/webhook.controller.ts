@@ -5,6 +5,7 @@ import { and, eq } from 'drizzle-orm';
 import { NextFunction, Request, Response } from 'express';
 import { nanoid } from 'nanoid';
 import { asyncHandler, CustomErrorHandler, ResponseHandler } from '../utils';
+import { IDataField } from '@repo/common/types';
 
 export const webhookListener = asyncHandler(
   async (req: Request, res: Response, next: NextFunction) => {
@@ -32,8 +33,7 @@ export const webhookListener = asyncHandler(
       stepIndex: 1,
       jobId: nanoid(),
       dataAvailable: {
-        id: 'input',
-        data: body,
+        input: body,
       },
     });
 

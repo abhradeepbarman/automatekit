@@ -65,6 +65,7 @@ export const updateWorkflow = asyncHandler(
       .set({
         name: name ?? workflowDetails.name,
         isActive: isActive ?? workflowDetails.isActive,
+        activatedAt: isActive ? new Date() : undefined,
         updatedAt: new Date(),
       })
       .where(eq(workflows.id, id as string))

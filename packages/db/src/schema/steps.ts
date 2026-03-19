@@ -28,6 +28,7 @@ export const steps = pgTable('steps', {
   index: integer('index').notNull(),
   app: varchar('app').notNull(),
   metadata: jsonb('metadata'),
+  executionMetadata: jsonb('execution_metadata'),
   connectionId: uuid('connection_id').references(() => connections.id, {
     onDelete: 'cascade',
     onUpdate: 'no action',

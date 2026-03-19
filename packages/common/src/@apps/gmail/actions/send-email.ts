@@ -1,6 +1,6 @@
-import axios, { AxiosError } from 'axios';
-import { type ReturnResponse, type IAction } from '../../../types';
+import axios from 'axios';
 import { z } from 'zod';
+import { type IAction } from '../../../types';
 
 export interface SendEmailMetadata {
   to: string;
@@ -12,32 +12,21 @@ export interface SendEmailOutput {
   receiverEmail: { id: string; data: string };
   subject: { id: string; data: string };
   body: { id: string; data: string };
-  senderEmail: { id: string; data: string };
 }
 
-export const sendEmail: IAction<SendEmailMetadata, SendEmailOutput> = {
+const sendEmailDataAvailable = [
+  { key: 'receiverEmail', label: 'Receiver Email', type: 'string' },
+  { key: 'subject', label: 'Subject', type: 'string' },
+  { key: 'body', label: 'Body', type: 'string' },
+] as const;
+type SendEmailDataAvailable = typeof sendEmailDataAvailable;
+
+export const sendEmail: IAction<SendEmailMetadata, SendEmailDataAvailable> = {
   id: 'send-email',
   name: 'Send Email',
   description: 'Send an email via Gmail',
 
-  dataAvailable: {
-    receiverEmail: {
-      id: 'receiver-email',
-      display: 'Receiver Email',
-    },
-    subject: {
-      id: 'subject',
-      display: 'Subject',
-    },
-    body: {
-      id: 'body',
-      display: 'Body',
-    },
-    senderEmail: {
-      id: 'sender-email',
-      display: 'Sender Email',
-    },
-  },
+  dataAvailable: sendEmailDataAvailable,
 
   fields: [
     {
@@ -65,7 +54,6 @@ export const sendEmail: IAction<SendEmailMetadata, SendEmailOutput> = {
 
   run: async ({ metadata, accessToken }) => {
     try {
-      // TODO: replace input elements
       const to = metadata.to;
       const subject = metadata.subject;
       const body = metadata.body;
@@ -84,7 +72,7 @@ export const sendEmail: IAction<SendEmailMetadata, SendEmailOutput> = {
         .replace(/\//g, '_')
         .replace(/=+$/, '');
 
-      const response = await axios.post(
+      await axios.post(
         'https://gmail.googleapis.com/gmail/v1/users/me/messages/send',
         { raw: encodedEmail },
         {
@@ -95,35 +83,22 @@ export const sendEmail: IAction<SendEmailMetadata, SendEmailOutput> = {
         },
       );
 
-      const output: SendEmailOutput = {
-        receiverEmail: { id: 'receiver-email', data: to },
-        subject: { id: 'subject', data: subject },
-        body: { id: 'body', data: body },
-        senderEmail: { id: 'sender-email', data: response.data.sender },
-      };
-
       return {
         success: true,
         message: 'Email sent successfully',
         statusCode: 200,
-        data: output,
+        data: {
+          subject: subject,
+          body: body,
+          receiverEmail: to,
+        },
       };
-    } catch (error) {
-      if (error instanceof AxiosError) {
-        return {
-          success: false,
-          message:
-            error.response?.data?.error?.message || 'Error sending email',
-          statusCode: error.response?.status || 500,
-          error: error.message,
-        };
-      }
-
+    } catch (error: Error | any) {
       return {
         success: false,
         message: 'Error sending email',
         statusCode: 500,
-        error: error as any,
+        error,
       };
     }
   },
