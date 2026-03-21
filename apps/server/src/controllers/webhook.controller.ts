@@ -1,11 +1,11 @@
+import { ExecutionStatus, StepType } from '@repo/common/types';
 import db from '@repo/db';
-import { webhooks, workflows } from '@repo/db/schema';
+import { executionLogs, webhooks, workflows } from '@repo/db/schema';
 import { actionQueue, actionQueueName } from '@repo/queue';
 import { and, eq } from 'drizzle-orm';
 import { NextFunction, Request, Response } from 'express';
 import { nanoid } from 'nanoid';
 import { asyncHandler, CustomErrorHandler, ResponseHandler } from '../utils';
-import { IDataField } from '@repo/common/types';
 
 export const webhookListener = asyncHandler(
   async (req: Request, res: Response, next: NextFunction) => {
@@ -28,10 +28,22 @@ export const webhookListener = asyncHandler(
       return next(CustomErrorHandler.notFound('Workflow not found'));
     }
 
+    // execution logs added
+    const jobId = nanoid();
+    await db.insert(executionLogs).values({
+      workflowId: workflowDetails.id,
+      appId: 'system',
+      jobId,
+      stepId: 'webhook',
+      message: 'Webhook triggered successfully',
+      stepType: StepType.TRIGGER,
+      status: ExecutionStatus.COMPLETED,
+    });
+
     await actionQueue.add(actionQueueName, {
       workflowId: workflowDetails.id,
       stepIndex: 1,
-      jobId: nanoid(),
+      jobId,
       dataAvailable: {
         input: body,
       },
