@@ -11,6 +11,7 @@ import {
   Loader2,
   Zap,
   AlertCircle,
+  RefreshCw,
 } from 'lucide-react';
 import { useEffect, useRef } from 'react';
 import { useParams } from 'react-router-dom';
@@ -72,6 +73,8 @@ const LogsSheet = ({ open, onOpenChange }: ILogsSheetProps) => {
     isFetchingNextPage,
     isLoading,
     isError,
+    isFetching,
+    refetch,
   } = useInfiniteQuery({
     queryKey: ['execution-logs', workflowId],
     queryFn: ({ pageParam = 1 }) =>
@@ -124,18 +127,34 @@ const LogsSheet = ({ open, onOpenChange }: ILogsSheetProps) => {
       <SheetContent className="flex flex-col overflow-hidden p-0 gap-0 w-full sm:max-w-md">
         {/* Header */}
         <SheetHeader className="px-5 pt-5 pb-4 border-b shrink-0">
-          <div className="flex items-center gap-2.5">
-            <div className="flex items-center justify-center h-8 w-8 rounded-lg bg-primary/10 shrink-0">
-              <Zap className="h-4 w-4 text-primary" />
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2.5">
+              <div className="flex items-center justify-center h-8 w-8 rounded-lg bg-primary/10 shrink-0">
+                <Zap className="h-4 w-4 text-primary" />
+              </div>
+              <div>
+                <SheetTitle className="text-base leading-tight">
+                  Execution Logs
+                </SheetTitle>
+                <SheetDescription className="text-xs mt-0.5">
+                  History of your workflow runs
+                </SheetDescription>
+              </div>
             </div>
-            <div>
-              <SheetTitle className="text-base leading-tight">
-                Execution Logs
-              </SheetTitle>
-              <SheetDescription className="text-xs mt-0.5">
-                History of your workflow runs
-              </SheetDescription>
-            </div>
+
+            <button
+              onClick={() => refetch()}
+              className="mr-6 h-8 w-8 flex items-center justify-center rounded-md border bg-background hover:bg-accent transition"
+            >
+              <RefreshCw
+                className={cn(
+                  'h-4 w-4',
+                  isFetching
+                    ? 'animate-spin text-primary'
+                    : 'text-muted-foreground',
+                )}
+              />
+            </button>
           </div>
         </SheetHeader>
 
