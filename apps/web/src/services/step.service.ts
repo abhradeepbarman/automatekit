@@ -1,6 +1,7 @@
 import axiosInstance from '@/lib/axios';
 import type { StepType } from '@repo/common/types';
 import type { IStep } from './workflow.service';
+import { validate } from 'uuid';
 
 class StepService {
   async addStep(
@@ -34,18 +35,23 @@ class StepService {
     return data.data;
   }
 
-  async updateStep(
-    stepId: string,
-    app?: string,
-    connectionId?: string,
-    metadata?: any,
-  ) {
+  async updateStep({
+    stepId,
+    app,
+    connectionId,
+    metadata,
+  }: {
+    stepId: string;
+    app?: string;
+    connectionId?: string;
+    metadata?: any;
+  }) {
+    if (!validate(stepId)) return;
     const { data } = await axiosInstance.put(`/step/${stepId}`, {
       app,
       connectionId,
       metadata,
     });
-
     return data.data;
   }
 }

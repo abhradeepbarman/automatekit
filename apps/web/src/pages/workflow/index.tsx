@@ -9,6 +9,7 @@ import TriggerSheet from '@/components/sheets/trigger-sheet';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { INITIAL_X, INITIAL_Y, NODE_SPACING } from '@/constants/workflow';
+import stepService from '@/services/step.service';
 import workflowService from '@/services/workflow.service';
 import apps from '@repo/common/@apps';
 import { StepType, type IDataField } from '@repo/common/types';
@@ -47,6 +48,20 @@ export default function Workflow() {
   const { data, isLoading } = useQuery({
     queryFn: () => workflowService.getWorkflow(workflowId!),
     queryKey: ['workflow', workflowId],
+  });
+
+  const { mutate: updateStep } = useMutation({
+    mutationFn: ({
+      stepId,
+      app,
+      connectionId,
+      metadata,
+    }: {
+      stepId: string;
+      app?: string;
+      connectionId?: string;
+      metadata?: any;
+    }) => stepService.updateStep({ stepId, app, connectionId, metadata }),
   });
 
   const { mutate: toggleWorkflowStatus, isPending: isStatusPending } =
@@ -88,9 +103,38 @@ export default function Workflow() {
   const [nodeIdToDelete, setNodeIdToDelete] = useState<string | null>(null);
 
   const onNodesChange: OnNodesChange = useCallback(
-    (changes) =>
-      setNodes((nodesSnapshot) => applyNodeChanges(changes, nodesSnapshot)),
-    [setNodes],
+    (changes) => {
+      setNodes((prevNodes) => {
+        const updatedNodes = applyNodeChanges(changes, prevNodes);
+
+        if (
+          changes.length === 1 &&
+          changes[0].type === 'position' &&
+          changes[0].dragging === false
+        ) {
+          const change = changes[0];
+
+          const updatedNode = updatedNodes.find((n) => n.id === change.id);
+          if (!updatedNode) return updatedNodes;
+
+          updateStep({
+            stepId: change.id,
+            metadata: {
+              id: change.id,
+              type: updatedNode.type,
+              data: updatedNode.data,
+              position: {
+                x: change.position?.x ?? updatedNode.position.x,
+                y: change.position?.y ?? updatedNode.position.y,
+              },
+            },
+          });
+        }
+
+        return updatedNodes;
+      });
+    },
+    [updateStep, setNodes],
   );
   const onEdgesChange: OnEdgesChange = useCallback(
     (changes) =>
@@ -124,6 +168,10 @@ export default function Workflow() {
               ...step.metadata.data,
               onEditClick: () => handleEditClick(),
               onDeleteClick: () => handleDeleteClick(step.id),
+            },
+            position: {
+              x: step.metadata.position?.x || INITIAL_X,
+              y: step.metadata.position?.y || INITIAL_Y,
             },
           };
         }),
