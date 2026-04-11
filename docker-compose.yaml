@@ -53,20 +53,6 @@ services:
       - automatekit-prod-network
 
   # -------------------------
-  # Adminer
-  # -------------------------
-  adminer:
-    image: adminer:latest
-    container_name: automatekit-adminer
-    restart: unless-stopped
-    ports:
-      - "5050:8080"
-    depends_on:
-      - postgres
-    networks:
-      - automatekit-prod-network
-
-  # -------------------------
   # Redis
   # -------------------------
   redis:
@@ -78,20 +64,6 @@ services:
       - "6379:6379"
     volumes:
       - redis_data:/data
-    networks:
-      - automatekit-prod-network
-
-  # -------------------------
-  # RedisInsight
-  # -------------------------
-  redisinsight:
-    image: redis/redisinsight:latest
-    container_name: automatekit-redisinsight
-    restart: unless-stopped
-    ports:
-      - "5540:5540"
-    depends_on:
-      - redis
     networks:
       - automatekit-prod-network
 
