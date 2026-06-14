@@ -4,7 +4,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import apps from '@repo/common/@apps';
+import { useIntegrations } from '@/hooks/use-integrations';
 import type { Node, NodeProps } from '@xyflow/react';
 import { Handle, Position } from '@xyflow/react';
 import { MoreVertical, Trash2 } from 'lucide-react';
@@ -22,10 +22,11 @@ type IActionNodeData = Node<
 >;
 
 const ActionNode = ({ data }: NodeProps<IActionNodeData>) => {
-  const appDetails = apps.filter((app) => app.id === data.appId)[0];
-  const actionDetails = apps
-    .filter((app) => app.id === data.appId)[0]
-    ?.actions?.filter((action) => action.id === data.actionId)[0];
+  const { data: integrations } = useIntegrations();
+  const appDetails = integrations?.find((app) => app.id === data.appId);
+  const actionDetails = appDetails?.actions.find(
+    (action) => action.id === data.actionId,
+  );
 
   return (
     <div className="relative min-w-65 rounded-md border bg-card shadow-sm">

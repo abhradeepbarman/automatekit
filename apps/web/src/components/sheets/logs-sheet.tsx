@@ -1,7 +1,7 @@
 import workflowService, {
   type IExecutionLog,
 } from '@/services/workflow.service';
-import apps from '@repo/common/@apps';
+import { useIntegrations } from '@/hooks/use-integrations';
 import { ExecutionStatus, StepType } from '@repo/common/types';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import {
@@ -64,6 +64,7 @@ const statusConfig: Record<
 
 const LogsSheet = ({ open, onOpenChange }: ILogsSheetProps) => {
   const { id: workflowId } = useParams();
+  const { data: integrations } = useIntegrations();
   const observerTarget = useRef<HTMLDivElement>(null);
 
   const {
@@ -102,7 +103,8 @@ const LogsSheet = ({ open, onOpenChange }: ILogsSheetProps) => {
     return () => observer.disconnect();
   }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
-  const getAppDetails = (appId: string) => apps.find((app) => app.id === appId);
+  const getAppDetails = (appId: string) =>
+    integrations?.find((app) => app.id === appId);
 
   const getStepDetails = (
     stepId: string | null,
@@ -112,10 +114,10 @@ const LogsSheet = ({ open, onOpenChange }: ILogsSheetProps) => {
     const app = getAppDetails(appId);
     if (!app) return null;
     if (stepType === StepType.TRIGGER) {
-      return app.triggers?.find((t) => t.id === stepId) ?? null;
+      return app.triggers.find((t) => t.id === stepId) ?? null;
     }
     if (stepType === StepType.ACTION) {
-      return app.actions?.find((a) => a.id === stepId) ?? null;
+      return app.actions.find((a) => a.id === stepId) ?? null;
     }
     return null;
   };

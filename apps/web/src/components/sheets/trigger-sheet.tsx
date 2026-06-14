@@ -1,6 +1,6 @@
 import { INITIAL_X, INITIAL_Y, NODE_SPACING } from '@/constants/workflow';
+import { useIntegrations } from '@/hooks/use-integrations';
 import stepService from '@/services/step.service';
-import apps from '@repo/common/@apps';
 import { StepType } from '@repo/common/types';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import type { Edge, Node } from '@xyflow/react';
@@ -8,8 +8,7 @@ import { useState, type Dispatch, type SetStateAction } from 'react';
 import { useParams } from 'react-router-dom';
 import { toast } from 'sonner';
 import ConnectBtn from '../common/connect-btn';
-import DynamicForm from '../common/dynamic-form';
-import { Button } from '../ui/button';
+import { EventConfigForm } from '../integrations/registry';
 import { Field, FieldError, FieldLabel } from '../ui/field';
 import {
   Select,
@@ -49,6 +48,7 @@ const TriggerSheet = ({
 }: ITriggerSheetProps) => {
   const queryClient = useQueryClient();
   const { id: workflowId } = useParams();
+  const { data: integrations } = useIntegrations();
   const [commonFields, setCommonFields] = useState({
     appId: '',
     triggerId: '',
@@ -106,7 +106,7 @@ const TriggerSheet = ({
         ...prev,
         triggerId: 'Trigger is required',
       }));
-    if (appDetails?.auth && !connectionId)
+    if (appDetails?.hasAuth && !connectionId)
       return setCommonFieldsErr((prev) => ({
         ...prev,
         connectionId: 'Connection is required',
@@ -178,8 +178,10 @@ const TriggerSheet = ({
     }
   };
 
-  const appDetails = apps.find((app) => app.id === commonFields.appId);
-  const triggerDetails = appDetails?.triggers?.find(
+  const appDetails = integrations?.find(
+    (app) => app.id === commonFields.appId,
+  );
+  const triggerDetails = appDetails?.triggers.find(
     (trigger) => trigger.id === commonFields.triggerId,
   );
 
@@ -225,8 +227,8 @@ const TriggerSheet = ({
                 <SelectValue placeholder="Select an app" />
               </SelectTrigger>
               <SelectContent>
-                {apps
-                  .filter((app) => app.triggers && app.triggers.length > 0)
+                {integrations
+                  ?.filter((app) => app.triggers.length > 0)
                   .map((app) => (
                     <SelectItem key={app.id} value={app.id}>
                       <div className="flex items-center gap-2">
@@ -268,13 +270,11 @@ const TriggerSheet = ({
                   <SelectValue placeholder="Select a trigger" />
                 </SelectTrigger>
                 <SelectContent>
-                  {apps
-                    .find((app) => app.id === commonFields.appId)
-                    ?.triggers?.map((trigger) => (
-                      <SelectItem key={trigger.id} value={trigger.id}>
-                        {trigger.name}
-                      </SelectItem>
-                    ))}
+                  {appDetails?.triggers.map((trigger) => (
+                    <SelectItem key={trigger.id} value={trigger.id}>
+                      {trigger.name}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
               {commonFieldsErr.triggerId && (
@@ -283,7 +283,7 @@ const TriggerSheet = ({
             </Field>
           )}
 
-          {appDetails?.auth && (
+          {appDetails?.hasAuth && (
             <Field>
               <FieldLabel>Connection</FieldLabel>
               <ConnectBtn
@@ -310,30 +310,14 @@ const TriggerSheet = ({
           )}
 
           {appDetails && triggerDetails && (
-            <div className="mt-6 space-y-4">
-              <div className="border-t pt-6">
-                {triggerDetails.fields && triggerDetails.fields.length > 0 ? (
-                  <>
-                    <h3 className="mb-4 text-sm font-medium">
-                      Trigger Configuration
-                    </h3>
-                    <DynamicForm
-                      fields={triggerDetails.fields}
-                      onSubmit={onSubmit}
-                      submitLabel="Add Trigger"
-                      isLoading={isPending}
-                    />
-                  </>
-                ) : (
-                  <Button
-                    onClick={() => onSubmit({})}
-                    disabled={isPending}
-                    className="w-full"
-                  >
-                    {isPending ? 'Adding...' : 'Add Trigger'}
-                  </Button>
-                )}
-              </div>
+            <div className="mt-6 border-t pt-6">
+              <EventConfigForm
+                appId={commonFields.appId}
+                eventId={commonFields.triggerId}
+                onSubmit={onSubmit}
+                submitLabel="Add Trigger"
+                isLoading={isPending}
+              />
             </div>
           )}
         </div>

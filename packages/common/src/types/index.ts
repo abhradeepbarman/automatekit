@@ -1,3 +1,5 @@
+import type { z } from 'zod';
+
 export interface ReturnResponse<T = any | null> {
   success: boolean;
   message: string;
@@ -29,30 +31,16 @@ export enum AuthProvider {
   GOOGLE = 'google',
 }
 
-export type FieldConfig = {
-  name: string;
-  label: string;
-  type:
-    | 'text'
-    | 'email'
-    | 'number'
-    | 'select'
-    | 'textarea'
-    | 'checkbox'
-    | 'date';
-  placeholder?: string;
-  description?: string;
-  disabled?: boolean;
-  required?: boolean;
-  options?: { label: string; value: string }[];
-  validations?: () => any;
-  defaultValue?: any;
-};
-
 export enum AppType {
   SYSTEM = 'system',
   GMAIL = 'gmail',
   NOTION = 'notion',
+}
+
+/** Built-in events of the `system` app, referenced across FE and BE. */
+export enum SystemEvent {
+  TIMER = 'timer',
+  WEBHOOK = 'webhook',
 }
 
 export interface TokenResponse {
@@ -104,7 +92,7 @@ export interface ITrigger<
   id: string;
   name: string;
   description: string;
-  fields?: FieldConfig[];
+  schema?: z.ZodType;
   dataAvailable?: TSchema;
   run: (params: {
     metadata: TMeta;
@@ -122,7 +110,7 @@ export interface IAction<
   id: string;
   name: string;
   description: string;
-  fields?: FieldConfig[];
+  schema?: z.ZodType;
   dataAvailable?: TSchema;
   run: (params: {
     metadata: TMeta;

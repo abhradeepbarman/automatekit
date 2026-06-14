@@ -1,4 +1,4 @@
-import { type ITrigger } from '../../../types';
+import { type ITrigger, SystemEvent } from '@repo/common/types';
 
 export interface IWebhookMetadata {
   workflowId: string;
@@ -7,7 +7,7 @@ export interface IWebhookMetadata {
 }
 
 export const webhook: ITrigger<IWebhookMetadata> = {
-  id: 'webhook',
+  id: SystemEvent.WEBHOOK,
   name: 'Webhook',
   description: 'Triggered when a webhook is received',
 

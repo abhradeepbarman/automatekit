@@ -1,5 +1,5 @@
 import { and, eq, gt } from 'drizzle-orm';
-import apps from '@repo/common/@apps';
+import apps from '@repo/integrations';
 import { NextFunction, Request, Response } from 'express';
 import { asyncHandler, CustomErrorHandler, ResponseHandler } from '../utils';
 import db from '@repo/db';

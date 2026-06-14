@@ -1,11 +1,8 @@
 import { NODE_SPACING } from '@/constants/workflow';
+import { useIntegrations } from '@/hooks/use-integrations';
+import type { IntegrationDataField } from '@/services/integration.service';
 import stepService from '@/services/step.service';
-import apps from '@repo/common/@apps';
-import {
-  StepType,
-  type FieldTypeMap,
-  type IDataField,
-} from '@repo/common/types';
+import { StepType } from '@repo/common/types';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import type { Edge, Node } from '@xyflow/react';
 import { Copy } from 'lucide-react';
@@ -13,9 +10,8 @@ import { useMemo, useState, type Dispatch, type SetStateAction } from 'react';
 import { useParams } from 'react-router-dom';
 import { toast } from 'sonner';
 import ConnectBtn from '../common/connect-btn';
-import DynamicForm from '../common/dynamic-form';
+import { EventConfigForm } from '../integrations/registry';
 import { Badge } from '../ui/badge';
-import { Button } from '../ui/button';
 import { Field, FieldError, FieldLabel } from '../ui/field';
 import {
   Select,
@@ -49,7 +45,7 @@ interface IActionSheetProps {
   setActionSheetOpen: Dispatch<SetStateAction<boolean>>;
   handleEditClick: () => void;
   handleDeleteClick: (nodeId: string) => void;
-  dataAvailable?: readonly IDataField<string, keyof FieldTypeMap>[];
+  dataAvailable?: IntegrationDataField[];
 }
 
 const ActionSheet = ({
@@ -67,6 +63,7 @@ const ActionSheet = ({
 }: IActionSheetProps) => {
   const queryClient = useQueryClient();
   const { id: workflowId } = useParams();
+  const { data: integrations } = useIntegrations();
   const [commonFields, setCommonFields] = useState({
     appId: '',
     actionId: '',
@@ -101,11 +98,13 @@ const ActionSheet = ({
     },
   });
 
+  const appDetails = integrations?.find((a) => a.id === commonFields.appId);
+
   const selectedAction = useMemo(() => {
     if (!commonFields.appId || !commonFields.actionId) return null;
-    const app = apps.find((a) => a.id === commonFields.appId);
-    return app?.actions?.find((a) => a.id === commonFields.actionId);
-  }, [commonFields.appId, commonFields.actionId]);
+    return appDetails?.actions.find((a) => a.id === commonFields.actionId);
+  }, [appDetails, commonFields.appId, commonFields.actionId]);
+
 
   const clearFields = () => {
     setCommonFields({
@@ -282,8 +281,8 @@ const ActionSheet = ({
                 <SelectValue placeholder="Select an app" />
               </SelectTrigger>
               <SelectContent>
-                {apps
-                  .filter((app) => app.actions && app.actions.length > 0)
+                {integrations
+                  ?.filter((app) => app.actions.length > 0)
                   .map((app) => (
                     <SelectItem key={app.id} value={app.id}>
                       <div className="flex items-center gap-2">
@@ -325,13 +324,11 @@ const ActionSheet = ({
                   <SelectValue placeholder="Select an action" />
                 </SelectTrigger>
                 <SelectContent>
-                  {apps
-                    .find((app) => app.id === commonFields.appId)
-                    ?.actions?.map((action) => (
-                      <SelectItem key={action.id} value={action.id}>
-                        {action.name}
-                      </SelectItem>
-                    ))}
+                  {appDetails?.actions.map((action) => (
+                    <SelectItem key={action.id} value={action.id}>
+                      {action.name}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
               {commonFieldsErr.actionId && (
@@ -416,31 +413,14 @@ const ActionSheet = ({
             )}
 
           {selectedAction && (
-            <div className="mt-6 space-y-4">
-              <div className="border-t pt-6">
-                {selectedAction.fields && selectedAction.fields.length > 0 ? (
-                  <>
-                    <h3 className="mb-4 text-sm font-medium">
-                      Action Configuration
-                    </h3>
-                    <DynamicForm
-                      fields={selectedAction.fields}
-                      onSubmit={onSubmit}
-                      submitLabel="Add Action"
-                      isLoading={isPending}
-                      variables={dataAvailable}
-                    />
-                  </>
-                ) : (
-                  <Button
-                    onClick={() => onSubmit({})}
-                    disabled={isPending}
-                    className="w-full"
-                  >
-                    {isPending ? 'Adding...' : 'Add Action'}
-                  </Button>
-                )}
-              </div>
+            <div className="mt-6 border-t pt-6">
+              <EventConfigForm
+                appId={commonFields.appId}
+                eventId={commonFields.actionId}
+                onSubmit={onSubmit}
+                submitLabel="Add Action"
+                isLoading={isPending}
+              />
             </div>
           )}
         </div>

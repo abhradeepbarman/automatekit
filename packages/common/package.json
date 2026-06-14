@@ -40,13 +40,6 @@
       "import": "./dist/types/index.js",
       "default": "./dist/types/index.js"
     },
-    "./@apps": {
-      "types": "./src/@apps/index.ts",
-      "development": "./src/@apps/index.ts",
-      "require": "./dist/@apps/index.js",
-      "import": "./dist/@apps/index.js",
-      "default": "./dist/@apps/index.js"
-    },
     "./utils": {
       "types": "./src/utils/index.ts",
       "development": "./src/utils/index.ts",

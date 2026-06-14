@@ -9,10 +9,10 @@ import TriggerSheet from '@/components/sheets/trigger-sheet';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { INITIAL_X, INITIAL_Y, NODE_SPACING } from '@/constants/workflow';
+import { useIntegrations } from '@/hooks/use-integrations';
 import stepService from '@/services/step.service';
 import workflowService from '@/services/workflow.service';
-import apps from '@repo/common/@apps';
-import { StepType, type IDataField } from '@repo/common/types';
+import { StepType } from '@repo/common/types';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   Background,
@@ -49,6 +49,8 @@ export default function Workflow() {
     queryFn: () => workflowService.getWorkflow(workflowId!),
     queryKey: ['workflow', workflowId],
   });
+
+  const { data: integrations } = useIntegrations();
 
   const { mutate: updateStep } = useMutation({
     mutationFn: ({
@@ -217,19 +219,15 @@ export default function Workflow() {
     const stepDetails = data?.steps.find(
       (step) => step.id === selectedSourceNodeId,
     );
-    const appDetails = apps.find((app) => app.id === stepDetails?.app);
-    if (stepDetails?.type == StepType.TRIGGER) {
-      const triggerDetails = appDetails?.triggers?.find(
-        (trigger) => trigger.id === stepDetails.eventName,
-      );
-      return triggerDetails?.dataAvailable;
-    } else {
-      const actionDetails = appDetails?.actions?.find(
-        (action) => action.id === stepDetails?.eventName,
-      );
-      return actionDetails?.dataAvailable as IDataField[];
+    if (!stepDetails) return undefined;
+    const appDetails = integrations?.find((app) => app.id === stepDetails.app);
+    if (stepDetails.type === StepType.TRIGGER) {
+      return appDetails?.triggers.find((t) => t.id === stepDetails.eventName)
+        ?.dataAvailable;
     }
-  }, [selectedSourceNodeId, data?.steps]);
+    return appDetails?.actions.find((a) => a.id === stepDetails.eventName)
+      ?.dataAvailable;
+  }, [selectedSourceNodeId, data?.steps, integrations]);
 
   return (
     <div className="w-screen h-screen flex flex-col">
@@ -241,7 +239,6 @@ export default function Workflow() {
           className="flex items-center gap-2"
         >
           <ArrowLeft className="h-4 w-4" />
-          Back to Dashboard
         </Button>
       </div>
 

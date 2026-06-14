@@ -1,17 +1,18 @@
-import axios from 'axios';
 import { z } from 'zod';
-import { type IAction } from '../../../types';
+import { type IAction } from '@repo/common/types';
+
+// Shared by the frontend form and backend step validation. `axios` is imported
+// lazily in `run` so this module stays client-safe and tree-shakes cleanly.
+export const sendEmailSchema = z.object({
+  to: z.string().email('Invalid email address'),
+  subject: z.string().min(1, 'Subject is required'),
+  body: z.string().min(1, 'Body is required'),
+});
 
 export interface SendEmailMetadata {
   to: string;
   subject: string;
   body: string;
-}
-
-export interface SendEmailOutput {
-  receiverEmail: { id: string; data: string };
-  subject: { id: string; data: string };
-  body: { id: string; data: string };
 }
 
 const sendEmailDataAvailable = [
@@ -26,34 +27,12 @@ export const sendEmail: IAction<SendEmailMetadata, SendEmailDataAvailable> = {
   name: 'Send Email',
   description: 'Send an email via Gmail',
 
+  schema: sendEmailSchema,
   dataAvailable: sendEmailDataAvailable,
-
-  fields: [
-    {
-      name: 'to',
-      label: 'To',
-      type: 'email',
-      placeholder: 'recipient@example.com',
-      validations: () => z.string().email('Invalid email address'),
-    },
-    {
-      name: 'subject',
-      label: 'Subject',
-      type: 'text',
-      placeholder: 'Email subject',
-      validations: () => z.string().min(1, 'Subject is required'),
-    },
-    {
-      name: 'body',
-      label: 'Body',
-      type: 'textarea',
-      placeholder: 'Email body',
-      validations: () => z.string().min(1, 'Body is required'),
-    },
-  ],
 
   run: async ({ metadata, accessToken }) => {
     try {
+      const axios = (await import('axios')).default;
       const to = metadata.to;
       const subject = metadata.subject;
       const body = metadata.body;

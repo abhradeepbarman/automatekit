@@ -1,4 +1,4 @@
-import apps from '@repo/common/@apps';
+import apps from '@repo/integrations';
 import { ExecutionStatus, StepType, type IApp } from '@repo/common/types';
 import { decryptSymmetric, logger } from '@repo/common/utils';
 import db from '@repo/db';

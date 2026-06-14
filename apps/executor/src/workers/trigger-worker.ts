@@ -1,4 +1,4 @@
-import apps from '@repo/common/@apps';
+import apps from '@repo/integrations';
 import {
   ExecutionStatus,
   IApp,

@@ -4,7 +4,8 @@ import { steps, webhooks, workflows } from '@repo/db/schema';
 import { and, eq, gte } from 'drizzle-orm';
 import { NextFunction, Request, Response } from 'express';
 import { asyncHandler, CustomErrorHandler, ResponseHandler } from '../utils';
-import { AppType } from '@repo/common/types';
+import { AppType, SystemEvent } from '@repo/common/types';
+import { getEventSchema } from '@repo/integrations/schemas';
 import { nanoid } from 'nanoid';
 import config from '../config';
 
@@ -24,6 +25,12 @@ export const addStep = asyncHandler(
 
     if (workflowDetails.userId !== req.user.id) {
       return next(CustomErrorHandler.notAllowed());
+    }
+
+    // Validate config fields against the same schema the frontend form uses.
+    const eventSchema = getEventSchema(app, eventName);
+    if (eventSchema && !eventSchema.safeParse(metadata?.data?.fields ?? {}).success) {
+      return next(CustomErrorHandler.badRequest('Invalid step configuration'));
     }
 
     let [newStep] = await db
@@ -59,7 +66,7 @@ export const addStep = asyncHandler(
       return next(CustomErrorHandler.serverError());
     }
 
-    if (app == AppType.SYSTEM && eventName == 'webhook') {
+    if (app === AppType.SYSTEM && eventName === SystemEvent.WEBHOOK) {
       const path = nanoid();
       const [newWebhook] = await db
         .insert(webhooks)

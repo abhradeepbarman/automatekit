@@ -1,42 +1,27 @@
-import z from 'zod';
+import { z } from 'zod';
 import {
   type ITrigger,
   PollingInterval,
   type ReturnResponse,
-} from '../../../types';
-import { isIntervalPassed } from '../..';
+  SystemEvent,
+} from '@repo/common/types';
+import { isIntervalPassed } from '../../../lib/interval';
+
+// Shared by the frontend form and backend step validation.
+export const timerSchema = z.object({
+  intervalMs: z.string().min(1, 'Interval is required'),
+});
 
 export interface TimerMetadata {
   intervalMs: PollingInterval;
 }
 
 export const timer: ITrigger<TimerMetadata> = {
-  id: 'timer',
+  id: SystemEvent.TIMER,
   name: 'Timer',
   description: 'Triggered when a timer is set',
-  fields: [
-    {
-      label: 'Interval',
-      name: 'intervalMs',
-      type: 'select',
-      defaultValue: PollingInterval.FIVE_MINUTES,
-      options: [
-        {
-          label: '1 min',
-          value: PollingInterval.ONE_MINUTE,
-        },
-        {
-          label: '5 min',
-          value: PollingInterval.FIVE_MINUTES,
-        },
-        {
-          label: '10 min',
-          value: PollingInterval.TEN_MINUTES,
-        },
-      ],
-      validations: () => z.string().min(1, 'Interval is required'),
-    },
-  ],
+
+  schema: timerSchema,
 
   run: ({ metadata, lastExecutedAt }): ReturnResponse => {
     try {

@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { type TokenResponse } from '../../../types';
+import { type TokenResponse } from '@repo/common/types';
 
 const getAuthUrl = (): string => {
   const clientId = process.env.GOOGLE_CLIENT_ID;

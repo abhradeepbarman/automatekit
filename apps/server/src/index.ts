@@ -7,6 +7,7 @@ import {
   authRoutes,
   credentialRoutes,
   dashboardRoutes,
+  integrationsRoutes,
   stepRoutes,
   webhookRoutes,
   workflowRoutes,
@@ -36,6 +37,7 @@ app.use('/api/v1/credential', credentialRoutes);
 app.use('/api/v1/step', stepRoutes);
 app.use('/api/v1/dashboard', dashboardRoutes);
 app.use('/api/v1/webhook', webhookRoutes);
+app.use('/api/v1/integrations', integrationsRoutes);
 
 // global error handler
 app.use((err: Error, req: Request, res: Response, next: NextFunction) => {

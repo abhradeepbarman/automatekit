@@ -26,6 +26,9 @@ importers:
       '@repo/db':
         specifier: workspace:*
         version: link:../../packages/db
+      '@repo/integrations':
+        specifier: workspace:*
+        version: link:../../packages/integrations
       '@repo/queue':
         specifier: workspace:*
         version: link:../../packages/queue
@@ -78,6 +81,9 @@ importers:
       '@repo/db':
         specifier: workspace:*
         version: link:../../packages/db
+      '@repo/integrations':
+        specifier: workspace:*
+        version: link:../../packages/integrations
       '@repo/queue':
         specifier: workspace:*
         version: link:../../packages/queue
@@ -190,6 +196,9 @@ importers:
       '@repo/common':
         specifier: workspace:*
         version: link:../../packages/common
+      '@repo/integrations':
+        specifier: workspace:*
+        version: link:../../packages/integrations
       '@tailwindcss/vite':
         specifier: ^4.1.18
         version: 4.2.1(vite@7.3.1(@types/node@24.12.0)(jiti@2.6.1)(lightningcss@1.31.1)(tsx@4.21.0))
@@ -382,6 +391,25 @@ importers:
       typescript-eslint:
         specifier: ^8.50.0
         version: 8.57.1(eslint@9.39.4(jiti@2.6.1))(typescript@5.9.3)
+
+  packages/integrations:
+    dependencies:
+      '@repo/common':
+        specifier: workspace:*
+        version: link:../common
+      axios:
+        specifier: ^1.13.2
+        version: 1.13.6
+      zod:
+        specifier: ^4.3.5
+        version: 4.3.6
+    devDependencies:
+      '@repo/typescript-config':
+        specifier: workspace:*
+        version: link:../typescript-config
+      '@types/node':
+        specifier: ^24.12.0
+        version: 24.12.0
 
   packages/queue:
     dependencies:

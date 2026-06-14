@@ -1,4 +1,4 @@
-import { AppType, type IApp } from '../../types';
+import { AppType, type IApp } from '@repo/common/types';
 import triggers from './triggers';
 import actions from './actions';
 import auth from './auth';

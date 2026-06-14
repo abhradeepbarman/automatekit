@@ -4,7 +4,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import apps from '@repo/common/@apps';
+import { useIntegrations } from '@/hooks/use-integrations';
 import { AppType } from '@repo/common/types';
 import type { Node, NodeProps } from '@xyflow/react';
 import { Handle, Position } from '@xyflow/react';
@@ -30,10 +30,11 @@ type ITriggerNodeData = Node<
 >;
 
 const TriggerNode = ({ data }: NodeProps<ITriggerNodeData>) => {
-  const appDetails = apps.filter((app) => app.id === data.appId)[0];
-  const triggerDetails = apps
-    .filter((app) => app.id === data.appId)[0]
-    ?.triggers?.filter((trigger) => trigger.id === data.triggerId)[0];
+  const { data: integrations } = useIntegrations();
+  const appDetails = integrations?.find((app) => app.id === data.appId);
+  const triggerDetails = appDetails?.triggers.find(
+    (trigger) => trigger.id === data.triggerId,
+  );
 
   const copyWebhook = async () => {
     await navigator.clipboard.writeText(data.webhook!.url);
@@ -100,7 +101,7 @@ const TriggerNode = ({ data }: NodeProps<ITriggerNodeData>) => {
       )}
 
       {/* webhook */}
-      {appDetails.id === AppType.SYSTEM &&
+      {appDetails?.id === AppType.SYSTEM &&
         triggerDetails?.id === 'webhook' &&
         data.webhook && (
           <div className="px-3 py-2 border-t bg-muted/10 flex items-center justify-between gap-2">
