@@ -13,6 +13,7 @@ import {
 import { Button } from '@/components/ui/button';
 import {
   Card,
+  CardAction,
   CardContent,
   CardDescription,
   CardHeader,
@@ -29,12 +30,22 @@ import {
   PaginationPrevious,
 } from '@/components/ui/pagination';
 import { Switch } from '@/components/ui/switch';
-import { formatDate } from '@/lib/utils';
+import { cn, formatDate } from '@/lib/utils';
 import dashboardService from '@/services/dashboard.service';
 import workflowService from '@/services/workflow.service';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { AxiosError } from 'axios';
-import { Check, Pencil, Trash2, X } from 'lucide-react';
+import {
+  Activity,
+  Check,
+  CircleAlert,
+  Pencil,
+  Plus,
+  Trash2,
+  Workflow as WorkflowIcon,
+  X,
+  type LucideIcon,
+} from 'lucide-react';
 import { Fragment, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -95,7 +106,11 @@ const Dashboard = () => {
   // Clamp the page if it falls out of range (e.g. after deleting the last
   // item on the last page).
   useEffect(() => {
-    if (pagination && page > pagination.totalPages && pagination.totalPages > 0) {
+    if (
+      pagination &&
+      page > pagination.totalPages &&
+      pagination.totalPages > 0
+    ) {
       setPage(pagination.totalPages);
     }
   }, [pagination, page]);
@@ -108,82 +123,120 @@ const Dashboard = () => {
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
-      <div className="px-6 py-8">
-        <div className="mx-auto max-w-6xl space-y-8">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-semibold tracking-tight">
-                Dashboard
-              </h1>
+
+      {/* Header band */}
+      <div className="relative overflow-hidden border-b border-border/60">
+        <div className="bg-line-grid mask-fade-b pointer-events-none absolute inset-0 opacity-60" />
+        <div className="relative mx-auto max-w-6xl px-6 py-10">
+          <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
+            <div className="space-y-1.5">
+              <p className="text-sm font-medium text-muted-foreground">
+                Welcome back
+              </p>
+              <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
               <p className="text-sm text-muted-foreground">
                 Overview of your automation activity
               </p>
             </div>
 
             <Button
-              className="h-10 w-37.5"
+              size="lg"
+              className="group h-11 gap-2 rounded-xl shadow-sm"
               onClick={handleCreateWorkflow}
               disabled={isPending}
             >
-              {isPending ? 'Creating...' : 'Create new workflow'}
+              <Plus className="size-4 transition-transform group-hover:rotate-90" />
+              {isPending ? 'Creating...' : 'Create workflow'}
             </Button>
           </div>
+        </div>
+      </div>
 
+      <div className="px-6 py-8">
+        <div className="mx-auto max-w-6xl space-y-8">
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <StatCard
               title="Workflows"
               value={stats?.totalWorkflows?.toString() || '0'}
               subtitle="All time"
+              icon={WorkflowIcon}
             />
             <StatCard
               title="Runs"
               value={stats?.totalRuns?.toString() || '0'}
               subtitle="Last 30 days"
+              icon={Activity}
             />
             <StatCard
               title="Errors"
               value={stats?.totalErrors?.toString() || '0'}
               subtitle="Last 30 days"
+              icon={CircleAlert}
+              accent="destructive"
             />
           </div>
 
-          <Card className="border-border/50 shadow-sm">
+          <Card className="overflow-hidden border-border/60 shadow-sm">
             <CardHeader>
               <CardTitle className="text-lg">Recent workflows</CardTitle>
               <CardDescription>
                 Your most recently created automations
               </CardDescription>
+              {pagination && pagination.total > 0 && (
+                <CardAction>
+                  <span className="inline-flex rounded-full border border-border bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground">
+                    {pagination.total} total
+                  </span>
+                </CardAction>
+              )}
             </CardHeader>
 
-            <CardContent className="divide-y">
+            <CardContent className="px-3 sm:px-4">
               {isLoading ? (
-                <div className="flex items-center justify-center py-8">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                <div className="divide-y divide-border/60">
+                  {Array.from({ length: 4 }).map((_, i) => (
+                    <WorkflowItemSkeleton key={i} />
+                  ))}
                 </div>
               ) : workflows.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-8 text-center">
-                  <p className="text-muted-foreground">No workflows yet</p>
-                  <p className="text-sm text-muted-foreground">
-                    Create your first workflow to get started
-                  </p>
+                <div className="flex flex-col items-center justify-center gap-4 py-14 text-center">
+                  <div className="grid size-14 place-items-center rounded-2xl border border-border bg-muted text-muted-foreground">
+                    <WorkflowIcon className="size-6" />
+                  </div>
+                  <div className="space-y-1">
+                    <p className="font-semibold">No workflows yet</p>
+                    <p className="text-sm text-muted-foreground">
+                      Create your first workflow to get started
+                    </p>
+                  </div>
+                  <Button
+                    className="mt-1 gap-2"
+                    onClick={handleCreateWorkflow}
+                    disabled={isPending}
+                  >
+                    <Plus className="size-4" />
+                    {isPending ? 'Creating...' : 'Create workflow'}
+                  </Button>
                 </div>
               ) : (
-                workflows.map((workflow) => (
-                  <WorkflowItem
-                    key={workflow.id}
-                    id={workflow.id}
-                    name={workflow.name}
-                    isActive={workflow.isActive}
-                    lastRun={formatLastRun(workflow.lastExecutedAt)}
-                    createdAt={workflow.createdAt}
-                    onClick={() => navigate(`/workflow/${workflow.id}`)}
-                  />
-                ))
+                <div className="divide-y divide-border/60">
+                  {workflows.map((workflow) => (
+                    <WorkflowItem
+                      key={workflow.id}
+                      id={workflow.id}
+                      name={workflow.name}
+                      isActive={workflow.isActive}
+                      lastRun={formatLastRun(workflow.lastExecutedAt)}
+                      createdAt={workflow.createdAt}
+                      onClick={() => navigate(`/workflow/${workflow.id}`)}
+                    />
+                  ))}
+                </div>
               )}
             </CardContent>
 
             {pagination && pagination.totalPages > 1 && (
-              <div className="flex items-center justify-between border-t px-6 py-3">
+              <div className="flex items-center justify-between border-t border-border/60 px-6 py-3">
                 <Pagination>
                   <PaginationContent>
                     <PaginationItem>
@@ -259,20 +312,53 @@ const StatCard = ({
   title,
   value,
   subtitle,
+  icon: Icon,
+  accent = 'default',
 }: {
   title: string;
   value: string;
   subtitle: string;
+  icon: LucideIcon;
+  accent?: 'default' | 'destructive';
 }) => {
   return (
-    <Card className="relative h-30 border-border/50 shadow-sm transition-shadow hover:shadow-md">
-      <div className="absolute inset-y-0 left-0 w-1 bg-primary/70" />
-      <CardContent className="flex h-full flex-col justify-center gap-1 p-6 pl-7">
-        <p className="text-sm font-medium text-muted-foreground">{title}</p>
-        <p className="text-3xl font-semibold tracking-tight">{value}</p>
-        <p className="text-xs text-muted-foreground">{subtitle}</p>
+    <Card className="group relative overflow-hidden border-border/60 py-0 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md">
+      <div className="bg-dot-grid pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+      <CardContent className="relative flex items-start justify-between gap-4 p-5">
+        <div className="space-y-1.5">
+          <p className="text-sm font-medium text-muted-foreground">{title}</p>
+          <p className="font-display text-4xl font-bold leading-none tracking-tight tabular-nums">
+            {value}
+          </p>
+          <p className="text-xs text-muted-foreground">{subtitle}</p>
+        </div>
+        <span
+          className={cn(
+            'grid size-10 shrink-0 place-items-center rounded-xl border transition-colors',
+            accent === 'destructive'
+              ? 'border-destructive/20 bg-destructive/10 text-destructive'
+              : 'border-border bg-muted text-foreground/70 group-hover:bg-primary group-hover:text-primary-foreground',
+          )}
+        >
+          <Icon className="size-5" />
+        </span>
       </CardContent>
     </Card>
+  );
+};
+
+const WorkflowItemSkeleton = () => {
+  return (
+    <div className="flex items-center justify-between gap-4 px-3 py-4">
+      <div className="flex items-center gap-3">
+        <div className="size-9 shrink-0 animate-pulse rounded-lg bg-muted" />
+        <div className="space-y-2">
+          <div className="h-3.5 w-40 animate-pulse rounded bg-muted" />
+          <div className="h-3 w-24 animate-pulse rounded bg-muted" />
+        </div>
+      </div>
+      <div className="h-5 w-10 animate-pulse rounded-full bg-muted" />
+    </div>
   );
 };
 
@@ -382,113 +468,136 @@ const WorkflowItem = ({
 
   return (
     <div
-      className="group flex items-center justify-between gap-4 py-4 cursor-pointer hover:bg-accent/50 transition-colors px-2 -mx-2 rounded"
+      className="group flex cursor-pointer items-center justify-between gap-3 rounded-xl px-3 py-3.5 transition-colors hover:bg-muted/60"
       onClick={isEditing ? undefined : onClick}
     >
-      <div className="flex-1 min-w-0">
-        {isEditing ? (
-          <div
-            className="flex items-center gap-2"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <Input
-              value={editedName}
-              onChange={(e) => setEditedName(e.target.value)}
-              onKeyDown={handleKeyDown}
-              className="h-8 max-w-xs"
-              autoFocus
-              disabled={isRenamePending}
-            />
-            <Button
-              size="sm"
-              variant="ghost"
-              className="h-8 w-8 p-0 shrink-0"
-              onClick={handleSave}
-              disabled={isRenamePending}
+      <div className="flex min-w-0 flex-1 items-center gap-3">
+        <span
+          className={cn(
+            'grid size-9 shrink-0 place-items-center rounded-lg border transition-colors',
+            isActive
+              ? 'border-foreground/15 bg-primary/5 text-foreground'
+              : 'border-border bg-muted text-muted-foreground',
+          )}
+        >
+          <WorkflowIcon className="size-4" />
+        </span>
+
+        <div className="min-w-0 flex-1">
+          {isEditing ? (
+            <div
+              className="flex items-center gap-2"
+              onClick={(e) => e.stopPropagation()}
             >
-              <Check className="h-4 w-4 text-green-600" />
-            </Button>
-            <Button
-              size="sm"
-              variant="ghost"
-              className="h-8 w-8 p-0 shrink-0"
-              onClick={handleCancel}
-              disabled={isRenamePending}
-            >
-              <X className="h-4 w-4 text-red-600" />
-            </Button>
-          </div>
-        ) : (
-          <>
-            <div className="flex items-center gap-1 mb-1">
-              <p className="font-medium truncate mr-3">{name}</p>
-              <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  className="h-6 w-6 p-0 shrink-0"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setIsEditing(true);
-                  }}
-                >
-                  <Pencil className="h-3 w-3 text-muted-foreground" />
-                </Button>
-                <AlertDialog
-                  open={showDeleteDialog}
-                  onOpenChange={setShowDeleteDialog}
-                >
-                  <AlertDialogTrigger asChild>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="h-6 w-6 p-0 shrink-0"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                      }}
-                    >
-                      <Trash2 className="h-3 w-3 text-destructive" />
-                    </Button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent onClick={(e) => e.stopPropagation()}>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>Delete workflow?</AlertDialogTitle>
-                      <AlertDialogDescription>
-                        This action cannot be undone. This will permanently
-                        delete the workflow "{name}" and all its steps.
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>Cancel</AlertDialogCancel>
-                      <AlertDialogAction
-                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                        onClick={handleDelete}
-                        disabled={isDeletePending}
+              <Input
+                value={editedName}
+                onChange={(e) => setEditedName(e.target.value)}
+                onKeyDown={handleKeyDown}
+                className="h-8 max-w-xs"
+                autoFocus
+                disabled={isRenamePending}
+              />
+              <Button
+                size="sm"
+                variant="ghost"
+                className="h-8 w-8 shrink-0 p-0"
+                onClick={handleSave}
+                disabled={isRenamePending}
+              >
+                <Check className="h-4 w-4 text-emerald-600" />
+              </Button>
+              <Button
+                size="sm"
+                variant="ghost"
+                className="h-8 w-8 shrink-0 p-0"
+                onClick={handleCancel}
+                disabled={isRenamePending}
+              >
+                <X className="h-4 w-4 text-destructive" />
+              </Button>
+            </div>
+          ) : (
+            <>
+              <div className="mb-1 flex items-center gap-1">
+                <p className="truncate font-medium">{name}</p>
+                <div className="flex items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="h-6 w-6 shrink-0 p-0"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setIsEditing(true);
+                    }}
+                  >
+                    <Pencil className="h-3 w-3 text-muted-foreground" />
+                  </Button>
+                  <AlertDialog
+                    open={showDeleteDialog}
+                    onOpenChange={setShowDeleteDialog}
+                  >
+                    <AlertDialogTrigger asChild>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-6 w-6 shrink-0 p-0 hover:bg-destructive/10"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                        }}
                       >
-                        {isDeletePending ? 'Deleting...' : 'Delete'}
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
+                        <Trash2 className="h-3 w-3 text-destructive" />
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent onClick={(e) => e.stopPropagation()}>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Delete workflow?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          This action cannot be undone. This will permanently
+                          delete the workflow "{name}" and all its steps.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                          onClick={handleDelete}
+                          disabled={isDeletePending}
+                        >
+                          {isDeletePending ? 'Deleting...' : 'Delete'}
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </div>
               </div>
-            </div>
-            <div className="space-y-0.5">
-              <p className="text-xs text-muted-foreground">
-                Created {formatDate(createdAt)}
-              </p>
-              <p className="text-xs text-muted-foreground">
-                Last run: {lastRun}
-              </p>
-            </div>
-          </>
-        )}
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <span>Created {formatDate(createdAt)}</span>
+                <span className="size-0.5 rounded-full bg-muted-foreground/40" />
+                <span>Last run: {lastRun}</span>
+              </div>
+            </>
+          )}
+        </div>
       </div>
 
       <div
-        className="flex items-center gap-2 shrink-0"
+        className="flex shrink-0 items-center gap-2.5"
         onClick={(e) => e.stopPropagation()}
       >
-        <span className="text-xs text-muted-foreground">
+        <span
+          className={cn(
+            'hidden items-center gap-1.5 rounded-full border px-2 py-0.5 text-xs font-medium sm:inline-flex',
+            isActive
+              ? 'border-emerald-500/20 bg-emerald-500/10 text-emerald-600'
+              : 'border-border bg-muted text-muted-foreground',
+          )}
+        >
+          <span
+            className={cn(
+              'size-1.5 rounded-full',
+              isActive ? 'bg-emerald-500' : 'bg-muted-foreground/50',
+            )}
+          />
           {isActive ? 'Active' : 'Inactive'}
         </span>
         <Switch

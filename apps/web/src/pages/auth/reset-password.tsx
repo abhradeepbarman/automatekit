@@ -27,6 +27,7 @@ import { toast } from 'sonner';
 import type { AxiosError } from 'axios';
 import { useState } from 'react';
 import { Eye, EyeOff, KeyRound } from 'lucide-react';
+import AuthShell from '@/components/common/auth-shell';
 
 type ResetPasswordForm = z.infer<typeof resetPasswordSchema>;
 
@@ -73,43 +74,27 @@ export default function ResetPassword() {
 
   if (!token) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background px-4 py-12">
-        <div className="w-full max-w-md">
-          <Card className="border-border/50 text-center">
-            <CardContent className="pt-10 pb-8 space-y-3">
-              <p className="text-lg font-semibold text-destructive">
-                Invalid Reset Link
-              </p>
-              <p className="text-sm text-muted-foreground">
-                This password reset link is missing a token and is invalid.
-              </p>
-              <Button asChild className="mt-4">
-                <Link to="/forgot-password">Request a new link</Link>
-              </Button>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
+      <AuthShell>
+        <Card className="border-border/60 text-center shadow-xl shadow-foreground/5">
+          <CardContent className="space-y-3 pb-8 pt-10">
+            <p className="text-lg font-semibold text-destructive">
+              Invalid Reset Link
+            </p>
+            <p className="text-sm text-muted-foreground">
+              This password reset link is missing a token and is invalid.
+            </p>
+            <Button asChild className="mt-4">
+              <Link to="/forgot-password">Request a new link</Link>
+            </Button>
+          </CardContent>
+        </Card>
+      </AuthShell>
     );
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background px-4 py-12">
-      <div className="w-full max-w-md space-y-8">
-        {/* Branding */}
-        <div className="text-center">
-          <Link
-            to={'/'}
-            className="text-4xl font-bold tracking-tight text-primary"
-          >
-            AutomateKit
-          </Link>
-          <p className="mt-3 text-muted-foreground">
-            Automate smarter. Work faster.
-          </p>
-        </div>
-
-        <Card className="border-border/50">
+    <AuthShell tagline="Automate smarter. Work faster.">
+      <Card className="border-border/60 shadow-xl shadow-foreground/5">
           <CardHeader className="space-y-1 pb-6">
             <div className="flex justify-center mb-4">
               <div className="rounded-full bg-primary/10 p-4">
@@ -224,7 +209,6 @@ export default function ResetPassword() {
             </p>
           </CardFooter>
         </Card>
-      </div>
-    </div>
+    </AuthShell>
   );
 }

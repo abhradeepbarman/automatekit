@@ -26,6 +26,7 @@ import authService from '@/services/auth.service';
 import { toast } from 'sonner';
 import { useAuth } from '@/context/auth-context';
 import GoogleLoginButton from '@/components/common/google-login-button';
+import AuthShell from '@/components/common/auth-shell';
 
 import { Eye, EyeOff } from 'lucide-react';
 import { useState } from 'react';
@@ -78,22 +79,8 @@ export default function Register() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background px-4 py-12">
-      <div className="w-full max-w-md space-y-8">
-        {/* Branding */}
-        <div className="text-center">
-          <Link
-            to={'/'}
-            className="text-4xl font-bold tracking-tight text-primary"
-          >
-            AutomateKit
-          </Link>
-          <p className="mt-3 text-muted-foreground">
-            Start automating smarter today
-          </p>
-        </div>
-
-        <Card className="border-border/50">
+    <AuthShell tagline="Start automating smarter today">
+      <Card className="border-border/60 shadow-xl shadow-foreground/5">
           <CardHeader className="space-y-1 pb-6">
             <CardTitle className="text-2xl text-center font-semibold">
               Create an account
@@ -256,7 +243,6 @@ export default function Register() {
             </p>
           </CardFooter>
         </Card>
-      </div>
-    </div>
+    </AuthShell>
   );
 }

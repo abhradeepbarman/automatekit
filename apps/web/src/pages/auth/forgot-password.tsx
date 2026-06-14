@@ -26,6 +26,7 @@ import { toast } from 'sonner';
 import type { AxiosError } from 'axios';
 import { useState } from 'react';
 import { Mail, ArrowLeft, CheckCircle } from 'lucide-react';
+import AuthShell from '@/components/common/auth-shell';
 
 const forgotPasswordSchema = z.object({
   email: z.string().min(1, 'Email is required').email('Invalid email'),
@@ -66,24 +67,10 @@ export default function ForgotPassword() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background px-4 py-12">
-      <div className="w-full max-w-md space-y-8">
-        {/* Branding */}
-        <div className="text-center">
-          <Link
-            to={'/'}
-            className="text-4xl font-bold tracking-tight text-primary"
-          >
-            AutomateKit
-          </Link>
-          <p className="mt-3 text-muted-foreground">
-            Automate smarter. Work faster.
-          </p>
-        </div>
-
+    <AuthShell tagline="Automate smarter. Work faster.">
         {emailSent ? (
           /* Success State */
-          <Card className="border-border/50">
+          <Card className="border-border/60 shadow-xl shadow-foreground/5">
             <CardHeader className="space-y-1 pb-6">
               <div className="flex justify-center mb-4">
                 <div className="rounded-full bg-primary/10 p-4">
@@ -125,7 +112,7 @@ export default function ForgotPassword() {
           </Card>
         ) : (
           /* Email Form */
-          <Card className="border-border/50">
+          <Card className="border-border/60 shadow-xl shadow-foreground/5">
             <CardHeader className="space-y-1 pb-6">
               <div className="flex justify-center mb-4">
                 <div className="rounded-full bg-primary/10 p-4">
@@ -194,7 +181,6 @@ export default function ForgotPassword() {
             </CardFooter>
           </Card>
         )}
-      </div>
-    </div>
+    </AuthShell>
   );
 }
