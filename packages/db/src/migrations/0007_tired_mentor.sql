@@ -1,1 +1,0 @@
-ALTER TABLE "execution_logs" ADD COLUMN "message" varchar NOT NULL;

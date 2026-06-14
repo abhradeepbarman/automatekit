@@ -23,7 +23,10 @@ export const workflows = pgTable('workflows', {
   activatedAt: timestamp('activated_at'),
   lastExecutedAt: timestamp('last_executed_at'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
-  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at')
+    .defaultNow()
+    .$onUpdate(() => new Date())
+    .notNull(),
 });
 
 export const workflowRelations = relations(workflows, ({ one, many }) => ({

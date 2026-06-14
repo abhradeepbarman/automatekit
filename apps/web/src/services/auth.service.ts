@@ -38,6 +38,11 @@ class AuthService {
     return data.data;
   }
 
+  async refresh(): Promise<ILoginResponse> {
+    const { data } = await axiosInstance.post('/auth/refresh');
+    return data.data;
+  }
+
   async logout(): Promise<void> {
     await axiosInstance.post('/auth/logout');
   }

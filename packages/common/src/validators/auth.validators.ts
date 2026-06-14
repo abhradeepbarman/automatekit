@@ -30,12 +30,20 @@ export const loginSchema = z.object({
   password: z.string().min(1, 'Password is required'),
 });
 
+export const forgotPasswordSchema = z.object({
+  email: z.string().min(1, 'Email is required').email('Invalid email'),
+});
+
 export const resetPasswordSchema = z
   .object({
     password: z
       .string()
-      .min(5, 'Password must be at least 8 characters long')
-      .max(128, 'Password must be less than 128 characters'),
+      .min(8, 'Password must be at least 8 characters long')
+      .max(128, 'Password must be less than 128 characters')
+      .regex(
+        /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])/,
+        'Password must contain uppercase, lowercase, number, and special character',
+      ),
     confirmPassword: z.string().min(1, 'Confirm password is required'),
   })
   .refine((data) => data.password === data.confirmPassword, {

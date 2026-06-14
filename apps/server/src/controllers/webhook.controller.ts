@@ -4,7 +4,7 @@ import { executionLogs, webhooks, workflows } from '@repo/db/schema';
 import { actionQueue, actionQueueName } from '@repo/queue';
 import { and, eq } from 'drizzle-orm';
 import { NextFunction, Request, Response } from 'express';
-import { nanoid } from 'nanoid';
+import { randomUUID } from 'crypto';
 import { asyncHandler, CustomErrorHandler, ResponseHandler } from '../utils';
 
 export const webhookListener = asyncHandler(
@@ -29,12 +29,12 @@ export const webhookListener = asyncHandler(
     }
 
     // execution logs added
-    const jobId = nanoid();
+    const jobId = randomUUID();
     await db.insert(executionLogs).values({
       workflowId: workflowDetails.id,
-      appId: 'system',
+      app: 'system',
       jobId,
-      stepId: 'webhook',
+      stepId: null,
       message: 'Webhook triggered successfully',
       stepType: StepType.TRIGGER,
       status: ExecutionStatus.COMPLETED,

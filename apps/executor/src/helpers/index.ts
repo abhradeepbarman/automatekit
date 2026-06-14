@@ -5,7 +5,7 @@ import { executionLogs } from '@repo/db/schema';
 
 export async function createExecutionLog(
   workflowId: string,
-  appId: string,
+  app: string,
   stepId: string,
   stepType: StepType,
   message: string,
@@ -26,7 +26,7 @@ export async function createExecutionLog(
 
     const [newLog] = await db
       .insert(executionLogs)
-      .values({ workflowId, appId, stepId, stepType, message, jobId, status })
+      .values({ workflowId, app, stepId, stepType, message, jobId, status })
       .returning();
 
     if (!newLog) return '';

@@ -6,18 +6,25 @@ import { workflows } from './workflows';
 
 export const executionLogs = pgTable('execution_logs', {
   id: uuid('id').notNull().primaryKey().defaultRandom(),
+  // Cascade: logs are removed only when the parent workflow is deleted.
   workflowId: uuid('workflow_id')
     .notNull()
     .references(() => workflows.id, {
       onDelete: 'cascade',
       onUpdate: 'no action',
     }),
-  appId: varchar('app_id').notNull(),
-  stepId: varchar('step_id').notNull(),
+  // set null + nullable: a deleted step must NOT delete its logs. app /
+  // stepType below are denormalized so the log stays readable after the step
+  // is gone.
+  stepId: uuid('step_id').references(() => steps.id, {
+    onDelete: 'set null',
+    onUpdate: 'no action',
+  }),
+  app: varchar('app').notNull(),
   stepType: varchar('step_type', {
     enum: [StepType.TRIGGER, StepType.ACTION],
   }).notNull(),
-  jobId: varchar('job_id').notNull(),
+  jobId: uuid('job_id').notNull(),
   message: varchar('message').notNull(),
   status: varchar('status', {
     enum: [
@@ -30,7 +37,10 @@ export const executionLogs = pgTable('execution_logs', {
     .notNull()
     .default(ExecutionStatus.PENDING),
   createdAt: timestamp('created_at').notNull().defaultNow(),
-  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at')
+    .notNull()
+    .defaultNow()
+    .$onUpdate(() => new Date()),
 });
 
 export const executionLogRelations = relations(executionLogs, ({ one }) => ({

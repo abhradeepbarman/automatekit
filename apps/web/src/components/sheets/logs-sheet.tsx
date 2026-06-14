@@ -105,7 +105,7 @@ const LogsSheet = ({ open, onOpenChange }: ILogsSheetProps) => {
   const getAppDetails = (appId: string) => apps.find((app) => app.id === appId);
 
   const getStepDetails = (
-    stepId: string,
+    stepId: string | null,
     appId: string,
     stepType: StepType,
   ) => {
@@ -192,10 +192,10 @@ const LogsSheet = ({ open, onOpenChange }: ILogsSheetProps) => {
           ) : (
             <div className="py-3 px-4 space-y-2">
               {allLogs.map((log: IExecutionLog, index: number) => {
-                const app = getAppDetails(log.appId);
+                const app = getAppDetails(log.app);
                 const step = getStepDetails(
                   log.stepId,
-                  log.appId,
+                  log.app,
                   log.stepType,
                 );
                 const status = statusConfig[log.status] ?? {
@@ -222,7 +222,7 @@ const LogsSheet = ({ open, onOpenChange }: ILogsSheetProps) => {
                         ) : (
                           <div className="h-8 w-8 rounded-md bg-muted flex items-center justify-center">
                             <span className="text-[11px] font-semibold text-muted-foreground">
-                              {log.appId.substring(0, 2).toUpperCase()}
+                              {log.app.substring(0, 2).toUpperCase()}
                             </span>
                           </div>
                         )}
@@ -234,7 +234,7 @@ const LogsSheet = ({ open, onOpenChange }: ILogsSheetProps) => {
                         <div className="flex items-start justify-between gap-2">
                           <div className="min-w-0">
                             <p className="text-sm font-medium leading-snug truncate">
-                              {app?.name ?? log.appId}
+                              {app?.name ?? log.app}
                             </p>
                             {step?.name && (
                               <p className="text-xs text-muted-foreground truncate leading-snug">

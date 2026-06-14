@@ -1,1 +1,0 @@
-ALTER TABLE "steps" DROP COLUMN "last_executed_at";

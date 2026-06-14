@@ -1,1 +1,0 @@
-ALTER TABLE "steps" RENAME COLUMN "name" TO "stepId";

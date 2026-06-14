@@ -11,7 +11,7 @@ import { connections, steps, workflows } from '@repo/db/schema';
 import { actionQueue, actionQueueName, triggerQueueName } from '@repo/queue';
 import { Job, Worker } from 'bullmq';
 import { and, eq } from 'drizzle-orm';
-import { nanoid } from 'nanoid';
+import { randomUUID } from 'crypto';
 import config from '../config';
 import { createExecutionLog } from '../helpers';
 
@@ -163,7 +163,7 @@ export const triggerWorker = new Worker<TriggerJobData>(
         `Triggering ${triggerDetails.eventName} for workflow ${workflowId}`,
       );
 
-      const jobId = nanoid();
+      const jobId = randomUUID();
       let decryptedAccessToken = decryptSymmetric(
         triggerDetails.connections?.accessTokenEncrypt!,
         triggerDetails.connections?.accessTokenIV!,

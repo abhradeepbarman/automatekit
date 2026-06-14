@@ -8,8 +8,13 @@ const _config = {
   NODE_ENV: process.env.NODE_ENV || 'development',
   APP_URL: process.env.APP_URL || '',
   API_URL: process.env.API_URL || '',
-
   ENCRYPTION_KEY: process.env.ENCRYPTION_KEY || '',
+
+  GOOGLE_AUTH_CLIENT_ID: process.env.GOOGLE_AUTH_CLIENT_ID || '',
+  GOOGLE_AUTH_CLIENT_SECRET: process.env.GOOGLE_AUTH_CLIENT_SECRET || '',
+  GOOGLE_AUTH_REDIRECT_URI:
+    process.env.GOOGLE_AUTH_REDIRECT_URI ||
+    `${process.env.API_URL || ''}/api/v1/auth/google/callback`,
 
   MAIL_USER: process.env.MAIL_USER || '',
   MAIL_PASS: process.env.MAIL_PASS || '',

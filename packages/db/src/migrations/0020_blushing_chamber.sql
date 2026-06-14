@@ -1,1 +1,0 @@
-ALTER TABLE "steps" ADD COLUMN "execution_metadata" jsonb;

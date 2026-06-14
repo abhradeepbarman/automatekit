@@ -9,6 +9,7 @@ import ProtectedLayout from './layout/protected-layout';
 import Dashboard from './pages/dashboard';
 import Workflow from './pages/workflow';
 import OAuthCallback from './pages/auth/oauth-callback';
+import GoogleCallback from './pages/auth/google-callback';
 
 const App = () => {
   return (
@@ -24,6 +25,7 @@ const App = () => {
         <Route path="dashboard" element={<Dashboard />} />
         <Route path="workflow/:id" element={<Workflow />} />
       </Route>
+      <Route path="/auth/google-callback" element={<GoogleCallback />} />
       <Route path="/auth/:app/callback" element={<OAuthCallback />} />
     </Routes>
   );

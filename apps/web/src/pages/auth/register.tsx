@@ -25,6 +25,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import authService from '@/services/auth.service';
 import { toast } from 'sonner';
 import { useAuth } from '@/context/auth-context';
+import GoogleLoginButton from '@/components/common/google-login-button';
 
 import { Eye, EyeOff } from 'lucide-react';
 import { useState } from 'react';
@@ -85,7 +86,7 @@ export default function Register() {
             to={'/'}
             className="text-4xl font-bold tracking-tight text-primary"
           >
-            AutomateX
+            AutomateKit
           </Link>
           <p className="mt-3 text-muted-foreground">
             Start automating smarter today
@@ -225,6 +226,19 @@ export default function Register() {
                     ? 'Creating account...'
                     : 'Create account'}
                 </Button>
+
+                <div className="relative">
+                  <div className="absolute inset-0 flex items-center">
+                    <span className="w-full border-t" />
+                  </div>
+                  <div className="relative flex justify-center text-xs uppercase">
+                    <span className="bg-card px-2 text-muted-foreground">
+                      or
+                    </span>
+                  </div>
+                </div>
+
+                <GoogleLoginButton label="Sign up with Google" />
               </CardContent>
             </form>
           </Form>

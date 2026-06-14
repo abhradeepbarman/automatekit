@@ -24,6 +24,11 @@ export enum StepType {
   ACTION = 'ACTION',
 }
 
+export enum AuthProvider {
+  LOCAL = 'local',
+  GOOGLE = 'google',
+}
+
 export type FieldConfig = {
   name: string;
   label: string;

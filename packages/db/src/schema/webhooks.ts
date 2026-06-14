@@ -1,5 +1,5 @@
 import { timestamp } from 'drizzle-orm/pg-core';
-import { pgTable, uuid } from 'drizzle-orm/pg-core';
+import { pgTable, uniqueIndex, uuid } from 'drizzle-orm/pg-core';
 import { workflows } from './workflows';
 import { varchar } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
@@ -21,8 +21,11 @@ export const webhooks = pgTable('webhooks', {
     }),
   path: varchar('path').notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
-  updatedAt: timestamp('updated_at').defaultNow().notNull(),
-});
+  updatedAt: timestamp('updated_at')
+    .defaultNow()
+    .$onUpdate(() => new Date())
+    .notNull(),
+}, (t) => [uniqueIndex('webhooks_path_unq').on(t.path)]);
 
 export const webhookRelations = relations(webhooks, ({ one }) => ({
   workflow: one(workflows, {

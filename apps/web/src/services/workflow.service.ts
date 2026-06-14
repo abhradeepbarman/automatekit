@@ -55,8 +55,8 @@ export interface IGetAllWorkflowsResponse {
 export interface IExecutionLog {
   id: string;
   workflowId: string;
-  appId: string;
-  stepId: string;
+  app: string;
+  stepId: string | null;
   stepType: StepType;
   jobId: string;
   message: string;

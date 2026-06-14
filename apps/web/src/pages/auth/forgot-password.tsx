@@ -101,7 +101,7 @@ export default function ForgotPassword() {
               <p className="font-medium text-foreground">{submittedEmail}</p>
               <p className="text-sm text-muted-foreground">
                 Click the link in the email to reset your password. The link
-                will expire in 24 hours.
+                will expire in 1 hour.
               </p>
               <Button
                 variant="outline"

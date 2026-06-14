@@ -1,1 +1,0 @@
-ALTER TABLE "steps" RENAME COLUMN "step_id" TO "event_name";

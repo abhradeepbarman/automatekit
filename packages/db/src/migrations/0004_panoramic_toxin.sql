@@ -1,1 +1,0 @@
-ALTER TABLE "steps" ADD COLUMN "last_executed_at" timestamp;

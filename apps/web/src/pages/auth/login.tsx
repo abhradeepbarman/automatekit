@@ -26,6 +26,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import authService from '@/services/auth.service';
 import { toast } from 'sonner';
 import { useAuth } from '@/context/auth-context';
+import GoogleLoginButton from '@/components/common/google-login-button';
 
 import { Eye, EyeOff } from 'lucide-react';
 import { useState } from 'react';
@@ -166,6 +167,19 @@ export default function Login() {
                 >
                   {form.formState.isSubmitting ? 'Signing in...' : 'Sign in'}
                 </Button>
+
+                <div className="relative">
+                  <div className="absolute inset-0 flex items-center">
+                    <span className="w-full border-t" />
+                  </div>
+                  <div className="relative flex justify-center text-xs uppercase">
+                    <span className="bg-card px-2 text-muted-foreground">
+                      or
+                    </span>
+                  </div>
+                </div>
+
+                <GoogleLoginButton />
               </CardContent>
             </form>
           </Form>
