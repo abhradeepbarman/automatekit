@@ -22,6 +22,7 @@ import { Input } from '@/components/ui/input';
 import {
   Pagination,
   PaginationContent,
+  PaginationEllipsis,
   PaginationItem,
   PaginationLink,
   PaginationNext,
@@ -34,7 +35,7 @@ import workflowService from '@/services/workflow.service';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { AxiosError } from 'axios';
 import { Check, Pencil, Trash2, X } from 'lucide-react';
-import { useState } from 'react';
+import { Fragment, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 
@@ -91,9 +92,17 @@ const Dashboard = () => {
   const workflows = workflowsData?.workflows || [];
   const pagination = workflowsData?.pagination;
 
+  // Clamp the page if it falls out of range (e.g. after deleting the last
+  // item on the last page).
+  useEffect(() => {
+    if (pagination && page > pagination.totalPages && pagination.totalPages > 0) {
+      setPage(pagination.totalPages);
+    }
+  }, [pagination, page]);
+
   const { data: stats } = useQuery({
     queryKey: ['dashboard-stats'],
-    queryFn: dashboardService.getStats,
+    queryFn: () => dashboardService.getStats(),
   });
 
   return (
@@ -124,14 +133,17 @@ const Dashboard = () => {
             <StatCard
               title="Workflows"
               value={stats?.totalWorkflows?.toString() || '0'}
+              subtitle="All time"
             />
             <StatCard
-              title="Runs (30 days)"
+              title="Runs"
               value={stats?.totalRuns?.toString() || '0'}
+              subtitle="Last 30 days"
             />
             <StatCard
               title="Errors"
               value={stats?.totalErrors?.toString() || '0'}
+              subtitle="Last 30 days"
             />
           </div>
 
@@ -201,11 +213,11 @@ const Dashboard = () => {
                           idx > 0 && pageNum - arr[idx - 1] > 1;
 
                         return (
-                          <div key={pageNum} className="flex items-center">
+                          <Fragment key={pageNum}>
                             {showEllipsisBefore && (
-                              <span className="px-2 text-muted-foreground">
-                                ...
-                              </span>
+                              <PaginationItem>
+                                <PaginationEllipsis />
+                              </PaginationItem>
                             )}
                             <PaginationItem>
                               <PaginationLink
@@ -216,7 +228,7 @@ const Dashboard = () => {
                                 {pageNum}
                               </PaginationLink>
                             </PaginationItem>
-                          </div>
+                          </Fragment>
                         );
                       })}
 
@@ -243,14 +255,22 @@ const Dashboard = () => {
 
 export default Dashboard;
 
-const StatCard = ({ title, value }: { title: string; value: string }) => {
+const StatCard = ({
+  title,
+  value,
+  subtitle,
+}: {
+  title: string;
+  value: string;
+  subtitle: string;
+}) => {
   return (
     <Card className="relative h-30 border-border/50 shadow-sm transition-shadow hover:shadow-md">
       <div className="absolute inset-y-0 left-0 w-1 bg-primary/70" />
       <CardContent className="flex h-full flex-col justify-center gap-1 p-6 pl-7">
         <p className="text-sm font-medium text-muted-foreground">{title}</p>
         <p className="text-3xl font-semibold tracking-tight">{value}</p>
-        <p className="text-xs text-muted-foreground">Last 30 days</p>
+        <p className="text-xs text-muted-foreground">{subtitle}</p>
       </CardContent>
     </Card>
   );
@@ -473,7 +493,7 @@ const WorkflowItem = ({
         </span>
         <Switch
           checked={isActive}
-          onCheckedChange={toggleWorkflowStatus}
+          onCheckedChange={(checked) => toggleWorkflowStatus(checked)}
           disabled={isStatusPending}
         />
       </div>

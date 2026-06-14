@@ -10,14 +10,14 @@ export const getDashboardStats = asyncHandler(
     const userId = req.user.id;
     const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
 
-    // Get total workflows
+    // Get total workflows (all time)
     const workflowsCount = await db.$count(
       workflows,
-      and(eq(workflows.userId, userId), gt(workflows.createdAt, thirtyDaysAgo)),
+      eq(workflows.userId, userId),
     );
 
     // Get total runs in last 30 days
-    const runsCount = await db
+    const [runsCount] = await db
       .select({ count: sql<number>`count(*)` })
       .from(executionLogs)
       .innerJoin(workflows, eq(executionLogs.workflowId, workflows.id))
@@ -28,8 +28,8 @@ export const getDashboardStats = asyncHandler(
         ),
       );
 
-    // Get total errors
-    const errorsCount = await db
+    // Get total errors in last 30 days
+    const [errorsCount] = await db
       .select({ count: sql<number>`count(*)` })
       .from(executionLogs)
       .innerJoin(workflows, eq(executionLogs.workflowId, workflows.id))
@@ -44,8 +44,8 @@ export const getDashboardStats = asyncHandler(
     return res.status(200).send(
       ResponseHandler(200, 'Dashboard stats fetched successfully', {
         totalWorkflows: Number(workflowsCount || 0),
-        totalRuns: Number(runsCount || 0),
-        totalErrors: Number(errorsCount || 0),
+        totalRuns: Number(runsCount?.count ?? 0),
+        totalErrors: Number(errorsCount?.count ?? 0),
       }),
     );
   },
