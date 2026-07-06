@@ -1,6 +1,6 @@
 import cookieParser from 'cookie-parser';
 import cors from 'cors';
-import express, { Application, NextFunction, Request, Response } from 'express';
+import express, { Application } from 'express';
 import config from './config';
 import { errorHandler } from './middlewares';
 import {
@@ -40,9 +40,7 @@ app.use('/api/v1/webhook', webhookRoutes);
 app.use('/api/v1/integrations', integrationsRoutes);
 
 // global error handler
-app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
-  errorHandler(err, req, res, next);
-});
+app.use(errorHandler);
 
 app.listen(config.PORT, () => {
   console.log(`Server is running on port ${config.PORT}`);
