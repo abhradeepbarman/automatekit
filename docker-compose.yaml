@@ -1,17 +1,25 @@
 services:
-  automatekit-web:
-    image: ${DOCKER_USERNAME}/automatekit-web:latest
+  web:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.web
+    image: automatekit-web:local
     container_name: automatekit-web
     restart: always
     ports:
       - "3000:80"
     env_file:
       - .env
+    depends_on:
+      - server
     networks:
-      - automatekit-network
+      - automatekit
 
-  automatekit-server:
-    image: ${DOCKER_USERNAME}/automatekit-server:latest
+  server:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.server
+    image: automatekit-server:local
     container_name: automatekit-server
     restart: always
     ports:
@@ -22,10 +30,13 @@ services:
       - postgres
       - redis
     networks:
-      - automatekit-network
+      - automatekit
 
-  automatekit-executor:
-    image: ${DOCKER_USERNAME}/automatekit-executor:latest
+  executor:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.executor
+    image: automatekit-executor:local
     container_name: automatekit-executor
     restart: always
     env_file:
@@ -34,41 +45,35 @@ services:
       - postgres
       - redis
     networks:
-      - automatekit-network
+      - automatekit
 
-  # -------------------------
-  # PostgreSQL
-  # -------------------------
   postgres:
     image: postgres:16-alpine
-    container_name: automatekit-db
+    container_name: automatekit-postgres
     restart: unless-stopped
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: ${POSTGRES_DB}
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - automatekit_postgres_data:/var/lib/postgresql/data
     networks:
-      - automatekit-network
+      - automatekit
 
-  # -------------------------
-  # Redis
-  # -------------------------
   redis:
     image: redis:7-alpine
     container_name: automatekit-redis
     restart: unless-stopped
     command: redis-server --requirepass ${REDIS_PASSWORD}
     volumes:
-      - redis_data:/data
+      - automatekit_redis_data:/data
     networks:
-      - automatekit-network
+      - automatekit
 
 volumes:
-  postgres_data:
-  redis_data:
+  automatekit_postgres_data:
+  automatekit_redis_data:
 
 networks:
-  automatekit-network:
+  automatekit:
     driver: bridge
