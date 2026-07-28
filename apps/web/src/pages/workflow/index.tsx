@@ -143,15 +143,6 @@ export default function Workflow() {
       setEdges((edgesSnapshot) => applyEdgeChanges(changes, edgesSnapshot)),
     [setEdges],
   );
-  // const onConnect: OnConnect = useCallback(
-  //   (params) => setEdges((edgesSnapshot) => addEdge(params, edgesSnapshot)),
-  //   [setEdges],
-  // );
-
-  const handleEditClick = () => {
-    console.log('Edit clicked');
-  };
-
   const handleDeleteClick = (nodeId: string) => {
     setNodeIdToDelete(nodeId);
   };
@@ -168,7 +159,6 @@ export default function Workflow() {
             id: step.id,
             data: {
               ...step.metadata.data,
-              onEditClick: () => handleEditClick(),
               onDeleteClick: () => handleDeleteClick(step.id),
             },
             position: {
@@ -284,7 +274,6 @@ export default function Workflow() {
             nodeTypes={nodeTypes}
             onNodesChange={onNodesChange}
             onEdgesChange={onEdgesChange}
-            // onConnect={onConnect}
             fitView
           >
             <MiniMap />
@@ -301,7 +290,6 @@ export default function Workflow() {
         setEdges={setEdges}
         setSelectedSourceNodeId={setSelectedSourceNodeId}
         setActionSheetOpen={setActionSheetOpen}
-        handleEditClick={handleEditClick}
         handleDeleteClick={handleDeleteClick}
       />
 
@@ -314,7 +302,6 @@ export default function Workflow() {
         sourceNodeId={selectedSourceNodeId}
         setSelectedSourceNodeId={setSelectedSourceNodeId}
         setActionSheetOpen={setActionSheetOpen}
-        handleEditClick={handleEditClick}
         handleDeleteClick={handleDeleteClick}
         dataAvailable={dataAvailable}
       />

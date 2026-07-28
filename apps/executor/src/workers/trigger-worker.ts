@@ -1,17 +1,23 @@
-import apps from '@repo/integrations';
 import {
   ExecutionStatus,
   IApp,
   StepType,
+  SystemEvent,
   TokenResponse,
 } from '@repo/common/types';
 import { decryptSymmetric, encryptSymmetric, logger } from '@repo/common/utils';
 import db from '@repo/db';
 import { connections, steps, workflows } from '@repo/db/schema';
-import { actionQueue, actionQueueName, triggerQueueName } from '@repo/queue';
+import apps from '@repo/integrations';
+import {
+  actionQueue,
+  actionQueueName,
+  redisConnection,
+  triggerQueueName,
+} from '@repo/queue';
 import { Job, Worker } from 'bullmq';
-import { and, eq } from 'drizzle-orm';
 import { randomUUID } from 'crypto';
+import { eq } from 'drizzle-orm';
 import config from '../config';
 import { createExecutionLog } from '../helpers';
 
@@ -111,7 +117,7 @@ export const triggerWorker = new Worker<TriggerJobData>(
       }
 
       const workflowDetails = await db.query.workflows.findFirst({
-        where: and(eq(workflows.id, workflowId)),
+        where: eq(workflows.id, workflowId),
         with: {
           steps: {
             where: eq(steps.type, StepType.TRIGGER),
@@ -127,11 +133,20 @@ export const triggerWorker = new Worker<TriggerJobData>(
         return;
       }
 
+      if (!workflowDetails.isActive) {
+        logger.info(`Workflow ${workflowId} is not active, skipping poll`);
+        return;
+      }
+
       const triggerDetails = workflowDetails.steps.find(
         (step) => step.index === 0,
       );
-      if (!triggerDetails || triggerDetails.eventName === 'webhook') {
+      if (!triggerDetails) {
         logger.error('Workflow has no trigger step');
+        return;
+      }
+
+      if (triggerDetails.eventName === SystemEvent.WEBHOOK) {
         return;
       }
 
@@ -164,18 +179,33 @@ export const triggerWorker = new Worker<TriggerJobData>(
       );
 
       const jobId = randomUUID();
-      let decryptedAccessToken = decryptSymmetric(
-        triggerDetails.connections?.accessTokenEncrypt!,
-        triggerDetails.connections?.accessTokenIV!,
-        triggerDetails.connections?.accessTokenTag!,
-      );
 
-      let { success, message, statusCode, data } = await trigger.run({
-        metadata: (triggerDetails.metadata as any).data.fields,
-        lastExecutedAt:
-          workflowDetails.lastExecutedAt || workflowDetails.activatedAt!,
-        accessToken: decryptedAccessToken || '',
+      const connection = triggerDetails.connections;
+      let decryptedAccessToken =
+        app.auth && connection?.accessTokenEncrypt
+          ? decryptSymmetric(
+              connection.accessTokenEncrypt,
+              connection.accessTokenIV,
+              connection.accessTokenTag,
+            )
+          : '';
+
+      const triggerMetadata =
+        (triggerDetails.metadata as any)?.data?.fields ?? {};
+      const lastExecutedAt =
+        workflowDetails.lastExecutedAt ?? workflowDetails.activatedAt ?? null;
+
+      const runResult = await trigger.run({
+        metadata: triggerMetadata,
+        lastExecutedAt: lastExecutedAt as Date,
+        accessToken: decryptedAccessToken,
       });
+
+      if (runResult.skipped) {
+        return;
+      }
+
+      let { success, message, statusCode, data } = runResult;
 
       let dataToPass = data;
       if (!success && statusCode === 401) {
@@ -189,17 +219,17 @@ export const triggerWorker = new Worker<TriggerJobData>(
           decryptedAccessToken = tokenResonse.access_token;
 
           const retryResult = await trigger.run({
-            metadata: (triggerDetails.metadata as any).data.fields,
-            lastExecutedAt:
-              workflowDetails.lastExecutedAt || workflowDetails.activatedAt!,
+            metadata: triggerMetadata,
+            lastExecutedAt: lastExecutedAt as Date,
             accessToken: decryptedAccessToken,
           });
 
-          if (!retryResult.success && retryResult.statusCode !== 200) {
+          if (!retryResult.success) {
             logger.error(retryResult.message);
             await createExecutionLog(
               workflowDetails.id,
               app.id,
+              triggerDetails.id,
               trigger.id,
               StepType.TRIGGER,
               retryResult.message || `Trigger ${trigger.name} failed`,
@@ -215,6 +245,7 @@ export const triggerWorker = new Worker<TriggerJobData>(
           await createExecutionLog(
             workflowDetails.id,
             app.id,
+            triggerDetails.id,
             trigger.id,
             StepType.TRIGGER,
             'Failed to refresh token',
@@ -223,10 +254,11 @@ export const triggerWorker = new Worker<TriggerJobData>(
           );
           return;
         }
-      } else if (!success && statusCode !== 200) {
+      } else if (!success) {
         await createExecutionLog(
           workflowDetails.id,
           app.id,
+          triggerDetails.id,
           trigger.id,
           StepType.TRIGGER,
           message || `Trigger ${trigger.name} failed`,
@@ -239,6 +271,7 @@ export const triggerWorker = new Worker<TriggerJobData>(
       await createExecutionLog(
         workflowDetails.id,
         app.id,
+        triggerDetails.id,
         trigger.id,
         StepType.TRIGGER,
         message || `Trigger ${trigger.name} successful`,
@@ -246,26 +279,24 @@ export const triggerWorker = new Worker<TriggerJobData>(
         ExecutionStatus.COMPLETED,
       );
 
+      await db
+        .update(workflows)
+        .set({ lastExecutedAt: new Date() })
+        .where(eq(workflows.id, workflowId));
+
       await actionQueue.add(actionQueueName, {
         stepIndex: 1,
         workflowId,
         jobId,
         dataAvailable: dataToPass,
       });
-
-      await db
-        .update(workflows)
-        .set({ lastExecutedAt: new Date() })
-        .where(eq(workflows.id, workflowId));
     } catch (error) {
       logger.error('Trigger worker error: ' + error);
     }
   },
   {
-    connection: {
-      url: config.REDIS_URL,
-    },
-    concurrency: 5,
+    connection: redisConnection(),
+    concurrency: config.WORKER_CONCURRENCY,
   },
 );
 

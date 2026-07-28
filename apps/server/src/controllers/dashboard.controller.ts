@@ -10,13 +10,11 @@ export const getDashboardStats = asyncHandler(
     const userId = req.user.id;
     const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
 
-    // Get total workflows (all time)
     const workflowsCount = await db.$count(
       workflows,
       eq(workflows.userId, userId),
     );
 
-    // Get total runs in last 30 days
     const [runsCount] = await db
       .select({ count: sql<number>`count(*)` })
       .from(executionLogs)
@@ -28,7 +26,6 @@ export const getDashboardStats = asyncHandler(
         ),
       );
 
-    // Get total errors in last 30 days
     const [errorsCount] = await db
       .select({ count: sql<number>`count(*)` })
       .from(executionLogs)

@@ -107,17 +107,17 @@ const LogsSheet = ({ open, onOpenChange }: ILogsSheetProps) => {
     integrations?.find((app) => app.id === appId);
 
   const getStepDetails = (
-    stepId: string | null,
+    eventName: string | null,
     appId: string,
     stepType: StepType,
   ) => {
     const app = getAppDetails(appId);
-    if (!app) return null;
+    if (!app || !eventName) return null;
     if (stepType === StepType.TRIGGER) {
-      return app.triggers.find((t) => t.id === stepId) ?? null;
+      return app.triggers.find((t) => t.id === eventName) ?? null;
     }
     if (stepType === StepType.ACTION) {
-      return app.actions.find((a) => a.id === stepId) ?? null;
+      return app.actions.find((a) => a.id === eventName) ?? null;
     }
     return null;
   };
@@ -196,7 +196,7 @@ const LogsSheet = ({ open, onOpenChange }: ILogsSheetProps) => {
               {allLogs.map((log: IExecutionLog, index: number) => {
                 const app = getAppDetails(log.app);
                 const step = getStepDetails(
-                  log.stepId,
+                  log.eventName,
                   log.app,
                   log.stepType,
                 );

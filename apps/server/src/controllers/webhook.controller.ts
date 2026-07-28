@@ -1,4 +1,9 @@
-import { ExecutionStatus, StepType } from '@repo/common/types';
+import {
+  AppType,
+  ExecutionStatus,
+  StepType,
+  SystemEvent,
+} from '@repo/common/types';
 import db from '@repo/db';
 import { executionLogs, webhooks, workflows } from '@repo/db/schema';
 import { actionQueue, actionQueueName } from '@repo/queue';
@@ -13,7 +18,7 @@ export const webhookListener = asyncHandler(
     const body = req.body;
 
     const webhookDetails = await db.query.webhooks.findFirst({
-      where: and(eq(webhooks.path, path as string)),
+      where: eq(webhooks.path, path as string),
     });
 
     if (!webhookDetails) {
@@ -21,20 +26,24 @@ export const webhookListener = asyncHandler(
     }
 
     const workflowDetails = await db.query.workflows.findFirst({
-      where: and(eq(workflows.id, webhookDetails.workflowId)),
+      where: eq(workflows.id, webhookDetails.workflowId),
     });
 
     if (!workflowDetails) {
       return next(CustomErrorHandler.notFound('Workflow not found'));
     }
 
-    // execution logs added
+    if (!workflowDetails.isActive) {
+      return next(CustomErrorHandler.notAllowed('Workflow is not active'));
+    }
+
     const jobId = randomUUID();
     await db.insert(executionLogs).values({
       workflowId: workflowDetails.id,
-      app: 'system',
+      app: AppType.SYSTEM,
       jobId,
-      stepId: null,
+      stepId: webhookDetails.stepId,
+      eventName: SystemEvent.WEBHOOK,
       message: 'Webhook triggered successfully',
       stepType: StepType.TRIGGER,
       status: ExecutionStatus.COMPLETED,

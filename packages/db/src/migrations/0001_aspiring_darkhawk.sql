@@ -1,0 +1,1 @@
+ALTER TABLE "execution_logs" ADD COLUMN "event_name" varchar;

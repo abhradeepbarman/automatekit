@@ -1,3 +1,4 @@
+import config from '@/config';
 import credentialService from '@/services/credential.service';
 import { useQuery } from '@tanstack/react-query';
 import { Plus } from 'lucide-react';
@@ -66,8 +67,16 @@ const ConnectBtn = ({
   };
 
   useEffect(() => {
+    const allowedOrigins = new Set([window.location.origin]);
+    try {
+      allowedOrigins.add(new URL(config.API_BASE_URL).origin);
+    } catch {
+      //
+    }
+
     const handleMessage = (event: MessageEvent) => {
-      if (event.data.type === 'OAUTH_SUCCESS') {
+      if (!allowedOrigins.has(event.origin)) return;
+      if (event.data?.type === 'OAUTH_SUCCESS' && event.data.code) {
         setCode(event.data.code);
       }
     };

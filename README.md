@@ -101,44 +101,71 @@ pnpm build
 
 ## Docker Deployment
 
-Use the root environment files for Docker deployments:
-
-- `.env.staging` for `docker-compose.staging.yaml`
-- `.env.prod` for `docker-compose.prod.yaml`
-
-Create them from the examples and fill in real secrets:
+The whole stack (web, server, executor, Postgres, Redis) runs from the root
+`docker-compose.yaml`, which reads a single root `.env`:
 
 ```bash
-cp .env.staging.example .env.staging
-cp .env.prod.example .env.prod
+cp .env.example .env
+# fill in secrets, then:
+docker compose up -d --build
 ```
 
-Start staging:
+Generate the required secrets with:
 
 ```bash
-docker compose --env-file .env.staging -f docker-compose.staging.yaml up -d --build
+openssl rand -hex 32   # ACCESS_SECRET
+openssl rand -hex 32   # REFRESH_SECRET
+openssl rand -hex 32   # ENCRYPTION_KEY (must be exactly 64 hex characters)
 ```
 
-Start production:
+Postgres and Redis are not published to the host — only `web` (`:3000`) and
+`server` (`:8000`) are. The app containers wait for both datastores to report
+_healthy_ before starting.
+
+There is a single `docker-compose.yaml` for every environment. It builds from
+source by default; to run the images pushed by CI instead, point it at them and
+pull rather than build:
 
 ```bash
-docker compose --env-file .env.prod -f docker-compose.prod.yaml up -d --build
+IMAGE_PREFIX=<docker-hub-username> IMAGE_TAG=prod-<git_sha> \
+  docker compose --env-file .env pull
+IMAGE_PREFIX=<docker-hub-username> IMAGE_TAG=prod-<git_sha> \
+  docker compose --env-file .env up -d
 ```
 
-When deploying from CI/CD with prebuilt images, set image tags then pull:
+The GitHub Actions workflow (`.github/workflows/deploy-prod.yaml`) does exactly
+this on push to `main`. The deploy host needs only `docker-compose.yaml` and a
+populated `.env` in `/var/www/automatekit/prod` — no source checkout.
+
+Run migrations against the running database:
 
 ```bash
-STAGING_IMAGE_TAG=staging-<git_sha> docker compose --env-file .env.staging -f docker-compose.staging.yaml pull
-PROD_IMAGE_TAG=prod-<git_sha> docker compose --env-file .env.prod -f docker-compose.prod.yaml pull
+pnpm --filter @repo/db db:migrate
 ```
 
-For deployment, you no longer need `apps/server/.env` or `apps/executor/.env` on the host.
+## Health Checks
+
+| Endpoint        | Meaning                                                    |
+| --------------- | ---------------------------------------------------------- |
+| `/health`       | Liveness — the process is running.                         |
+| `/health/ready` | Readiness — the database is reachable. Returns 503 if not. |
+
+## Configuration
+
+Both `server` and `executor` validate their environment at boot and exit with an
+explicit list of problems if anything is missing or malformed, rather than
+starting with insecure empty defaults. See `.env.example` for every variable and
+[`docs/PRD.md`](docs/PRD.md#9-configuration) for what each one does.
 
 ## Environment Hygiene
 
 - `.env.example` files are tracked; `.env` files are not.
 - Keep `.env` values out of version control and use a secrets manager in production.
-- For Docker, prefer `--env-file` with `.env.staging` or `.env.prod` rather than copying app-level `.env` files.
+- Rotating `ENCRYPTION_KEY` makes stored OAuth connections undecryptable — users must reconnect.
+
+## Documentation
+
+- [Product Requirements Document](docs/PRD.md) — scope, requirements, architecture, data model, API surface.
 
 ## Contributing
 

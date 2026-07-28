@@ -1,3 +1,4 @@
+import { logger } from '@repo/common/utils';
 import { NextFunction, Request, Response } from 'express';
 import { JsonWebTokenError } from 'jsonwebtoken';
 import { ZodError } from 'zod';
@@ -9,13 +10,11 @@ const errorHandler = (
   err: Error,
   req: Request,
   res: Response,
-  next: NextFunction,
+  _next: NextFunction,
 ) => {
   let statusCode = 500;
   let message: string = 'Internal server error';
   let data: object | null = null;
-
-  console.error(err);
 
   if (err instanceof ZodError) {
     statusCode = 422;
@@ -31,6 +30,14 @@ const errorHandler = (
   if (err instanceof CustomErrorHandler) {
     statusCode = err.status;
     message = err.message;
+  }
+
+  if (statusCode >= 500) {
+    logger.error(`${req.method} ${req.originalUrl} -> ${statusCode}`, err);
+  } else {
+    logger.warn(
+      `${req.method} ${req.originalUrl} -> ${statusCode}: ${message}`,
+    );
   }
 
   res.status(statusCode).json(ResponseHandler(statusCode, message, data));

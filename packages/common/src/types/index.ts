@@ -6,6 +6,8 @@ export interface ReturnResponse<T = any | null> {
   error?: Error;
   statusCode: number;
   data?: T;
+  /** Polling triggers set this for "nothing to do this tick" — a no-op, not a failure. */
+  skipped?: boolean;
 }
 
 export enum ExecutionStatus {

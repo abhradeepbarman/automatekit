@@ -45,10 +45,7 @@ export default function Navbar() {
       <div className="mx-auto max-w-6xl px-6">
         <div className="flex h-16 items-center justify-between">
           {/* Logo/Brand */}
-          <Link
-            to="/dashboard"
-            className="transition-opacity hover:opacity-80"
-          >
+          <Link to="/dashboard" className="transition-opacity hover:opacity-80">
             <Logo />
           </Link>
 

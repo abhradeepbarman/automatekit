@@ -32,10 +32,7 @@ const Home = () => {
       {/* Content */}
       <div className="relative z-10 flex max-w-3xl flex-col items-center">
         <div className="animate-in fade-in slide-in-from-bottom-3 duration-700">
-          <Logo
-            iconOnly
-            markClassName="size-14 rounded-2xl"
-          />
+          <Logo iconOnly markClassName="size-14 rounded-2xl" />
         </div>
 
         <div className="mt-8 inline-flex animate-in fade-in slide-in-from-bottom-3 items-center gap-2 rounded-full border border-border bg-card px-3.5 py-1.5 text-xs font-medium text-muted-foreground shadow-xs duration-700 [animation-delay:80ms]">

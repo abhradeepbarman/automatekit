@@ -9,8 +9,6 @@ export interface EventFormProps {
   defaultValues?: Record<string, any>;
 }
 
-// Renders the dedicated config form for an event, falling back to a plain
-// submit button for events without configurable fields (e.g. webhook).
 export function EventConfigForm({
   appId,
   eventId,

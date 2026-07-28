@@ -23,7 +23,9 @@ class CustomErrorHandler extends Error {
     return new CustomErrorHandler(401, message);
   }
 
-  static notAllowed(message: string = 'Action not allowed'): CustomErrorHandler {
+  static notAllowed(
+    message: string = 'Action not allowed',
+  ): CustomErrorHandler {
     return new CustomErrorHandler(403, message);
   }
 

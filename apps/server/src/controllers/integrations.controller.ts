@@ -2,8 +2,6 @@ import apps from '@repo/integrations';
 import { NextFunction, Request, Response } from 'express';
 import { asyncHandler, ResponseHandler } from '../utils';
 
-// Returns serializable integration metadata for the frontend (never `run`,
-// `auth`, or the zod `schema`, which stay server-side).
 export const getIntegrations = asyncHandler(
   async (_req: Request, res: Response, _next: NextFunction) => {
     const integrations = apps.map((app) => ({
@@ -29,11 +27,7 @@ export const getIntegrations = asyncHandler(
     return res
       .status(200)
       .send(
-        ResponseHandler(
-          200,
-          'Integrations fetched successfully',
-          integrations,
-        ),
+        ResponseHandler(200, 'Integrations fetched successfully', integrations),
       );
   },
 );

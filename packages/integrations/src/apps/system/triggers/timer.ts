@@ -7,7 +7,6 @@ import {
 } from '@repo/common/types';
 import { isIntervalPassed } from '../../../lib/interval';
 
-// Shared by the frontend form and backend step validation.
 export const timerSchema = z.object({
   intervalMs: z.string().min(1, 'Interval is required'),
 });
@@ -42,8 +41,9 @@ export const timer: ITrigger<TimerMetadata> = {
 
       return {
         success: false,
-        message: 'Timer not triggered',
-        statusCode: 400,
+        skipped: true,
+        message: 'Timer interval has not elapsed',
+        statusCode: 200,
       };
     } catch (error) {
       console.error('Error executing timer trigger:', error);

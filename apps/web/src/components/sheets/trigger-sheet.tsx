@@ -32,7 +32,6 @@ interface ITriggerSheetProps {
   setEdges: Dispatch<SetStateAction<Edge[]>>;
   setSelectedSourceNodeId: Dispatch<SetStateAction<string>>;
   setActionSheetOpen: Dispatch<SetStateAction<boolean>>;
-  handleEditClick: () => void;
   handleDeleteClick: (nodeId: string) => void;
 }
 
@@ -43,7 +42,6 @@ const TriggerSheet = ({
   setEdges,
   setSelectedSourceNodeId,
   setActionSheetOpen,
-  handleEditClick,
   handleDeleteClick,
 }: ITriggerSheetProps) => {
   const queryClient = useQueryClient();
@@ -135,7 +133,6 @@ const TriggerSheet = ({
           ...newStepDetails.metadata,
           data: {
             ...newStepDetails.metadata.data,
-            onEditClick: () => handleEditClick(),
             onDeleteClick: () => handleDeleteClick(newStepDetails.metadata.id),
           },
         },
@@ -178,9 +175,7 @@ const TriggerSheet = ({
     }
   };
 
-  const appDetails = integrations?.find(
-    (app) => app.id === commonFields.appId,
-  );
+  const appDetails = integrations?.find((app) => app.id === commonFields.appId);
   const triggerDetails = appDetails?.triggers.find(
     (trigger) => trigger.id === commonFields.triggerId,
   );

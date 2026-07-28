@@ -1,3 +1,4 @@
+import { logger } from '@repo/common/utils';
 import nodemailer from 'nodemailer';
 import config from '../config';
 
@@ -20,19 +21,17 @@ export const sendEmail = async ({
   subject: string;
   body: string;
 }) => {
-  try {
-    const info = await transporter.sendMail({
-      from: config.MAIL_USER,
-      to,
-      subject,
-      html: body,
-    });
+  const info = await transporter.sendMail({
+    from: config.MAIL_USER,
+    to,
+    subject,
+    html: body,
+  });
 
-    if (info.messageId) console.log('Email sent:', info.messageId);
-    else throw new Error('Email not sent');
-
-    return info;
-  } catch (error) {
-    throw error;
+  if (!info.messageId) {
+    throw new Error('Email not sent');
   }
+
+  logger.info(`Email sent: ${info.messageId}`);
+  return info;
 };

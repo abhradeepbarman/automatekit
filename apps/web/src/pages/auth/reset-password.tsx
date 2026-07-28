@@ -95,120 +95,120 @@ export default function ResetPassword() {
   return (
     <AuthShell tagline="Automate smarter. Work faster.">
       <Card className="border-border/60 shadow-xl shadow-foreground/5">
-          <CardHeader className="space-y-1 pb-6">
-            <div className="flex justify-center mb-4">
-              <div className="rounded-full bg-primary/10 p-4">
-                <KeyRound className="h-10 w-10 text-primary" />
-              </div>
+        <CardHeader className="space-y-1 pb-6">
+          <div className="flex justify-center mb-4">
+            <div className="rounded-full bg-primary/10 p-4">
+              <KeyRound className="h-10 w-10 text-primary" />
             </div>
-            <CardTitle className="text-2xl text-center font-semibold">
-              Set new password
-            </CardTitle>
-            <CardDescription className="text-center">
-              Your new password must be different from previous ones.
-            </CardDescription>
-          </CardHeader>
+          </div>
+          <CardTitle className="text-2xl text-center font-semibold">
+            Set new password
+          </CardTitle>
+          <CardDescription className="text-center">
+            Your new password must be different from previous ones.
+          </CardDescription>
+        </CardHeader>
 
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-              <CardContent className="space-y-4">
-                {/* New Password */}
-                <FormField
-                  control={form.control}
-                  name="password"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>New Password</FormLabel>
-                      <FormControl>
-                        <div className="relative">
-                          <Input
-                            type={showPassword ? 'text' : 'password'}
-                            placeholder="••••••••"
-                            autoComplete="new-password"
-                            {...field}
-                          />
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                            onClick={() => setShowPassword(!showPassword)}
-                          >
-                            {showPassword ? (
-                              <EyeOff className="h-4 w-4 text-muted-foreground" />
-                            ) : (
-                              <Eye className="h-4 w-4 text-muted-foreground" />
-                            )}
-                          </Button>
-                        </div>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            <CardContent className="space-y-4">
+              {/* New Password */}
+              <FormField
+                control={form.control}
+                name="password"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>New Password</FormLabel>
+                    <FormControl>
+                      <div className="relative">
+                        <Input
+                          type={showPassword ? 'text' : 'password'}
+                          placeholder="••••••••"
+                          autoComplete="new-password"
+                          {...field}
+                        />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                          onClick={() => setShowPassword(!showPassword)}
+                        >
+                          {showPassword ? (
+                            <EyeOff className="h-4 w-4 text-muted-foreground" />
+                          ) : (
+                            <Eye className="h-4 w-4 text-muted-foreground" />
+                          )}
+                        </Button>
+                      </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-                {/* Confirm Password */}
-                <FormField
-                  control={form.control}
-                  name="confirmPassword"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Confirm New Password</FormLabel>
-                      <FormControl>
-                        <div className="relative">
-                          <Input
-                            type={showConfirmPassword ? 'text' : 'password'}
-                            placeholder="••••••••"
-                            autoComplete="new-password"
-                            {...field}
-                          />
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                            onClick={() =>
-                              setShowConfirmPassword(!showConfirmPassword)
-                            }
-                          >
-                            {showConfirmPassword ? (
-                              <EyeOff className="h-4 w-4 text-muted-foreground" />
-                            ) : (
-                              <Eye className="h-4 w-4 text-muted-foreground" />
-                            )}
-                          </Button>
-                        </div>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+              {/* Confirm Password */}
+              <FormField
+                control={form.control}
+                name="confirmPassword"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Confirm New Password</FormLabel>
+                    <FormControl>
+                      <div className="relative">
+                        <Input
+                          type={showConfirmPassword ? 'text' : 'password'}
+                          placeholder="••••••••"
+                          autoComplete="new-password"
+                          {...field}
+                        />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                          onClick={() =>
+                            setShowConfirmPassword(!showConfirmPassword)
+                          }
+                        >
+                          {showConfirmPassword ? (
+                            <EyeOff className="h-4 w-4 text-muted-foreground" />
+                          ) : (
+                            <Eye className="h-4 w-4 text-muted-foreground" />
+                          )}
+                        </Button>
+                      </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-                <Button
-                  type="submit"
-                  className="w-full h-11 text-base font-medium"
-                  disabled={form.formState.isSubmitting}
-                >
-                  {form.formState.isSubmitting
-                    ? 'Resetting...'
-                    : 'Reset password'}
-                </Button>
-              </CardContent>
-            </form>
-          </Form>
+              <Button
+                type="submit"
+                className="w-full h-11 text-base font-medium"
+                disabled={form.formState.isSubmitting}
+              >
+                {form.formState.isSubmitting
+                  ? 'Resetting...'
+                  : 'Reset password'}
+              </Button>
+            </CardContent>
+          </form>
+        </Form>
 
-          <CardFooter className="flex flex-col gap-4 border-t bg-muted/40 pt-6 text-sm text-muted-foreground">
-            <p>
-              Remembered your password?{' '}
-              <Link to="/login" className="text-primary underline">
-                Sign in
-              </Link>
-            </p>
-            <p className="text-xs">
-              © {new Date().getFullYear()} AutomateKit • All rights reserved
-            </p>
-          </CardFooter>
-        </Card>
+        <CardFooter className="flex flex-col gap-4 border-t bg-muted/40 pt-6 text-sm text-muted-foreground">
+          <p>
+            Remembered your password?{' '}
+            <Link to="/login" className="text-primary underline">
+              Sign in
+            </Link>
+          </p>
+          <p className="text-xs">
+            © {new Date().getFullYear()} AutomateKit • All rights reserved
+          </p>
+        </CardFooter>
+      </Card>
     </AuthShell>
   );
 }

@@ -15,7 +15,6 @@ type IActionNodeData = Node<
     actionId: string;
     index: number;
     fields: any;
-    onEditClick: () => void;
     onDeleteClick: () => void;
   },
   'actionNode'
@@ -52,10 +51,6 @@ const ActionNode = ({ data }: NodeProps<IActionNodeData>) => {
             <MoreVertical className="h-4 w-4" />
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            {/* <DropdownMenuItem onClick={data.handleEditClick}>
-              <Edit className="h-4 w-4 mr-2" />
-              Edit
-            </DropdownMenuItem> */}
             <DropdownMenuItem
               onClick={data.onDeleteClick}
               variant="destructive"

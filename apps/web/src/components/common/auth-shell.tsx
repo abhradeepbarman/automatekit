@@ -20,7 +20,10 @@ export default function AuthShell({ tagline, children }: AuthShellProps) {
       <div className="relative z-10 w-full max-w-md animate-in fade-in slide-in-from-bottom-4 space-y-7 duration-700">
         <div className="flex flex-col items-center text-center">
           <Link to="/" className="transition-opacity hover:opacity-80">
-            <Logo markClassName="size-10 rounded-xl" wordmarkClassName="text-2xl" />
+            <Logo
+              markClassName="size-10 rounded-xl"
+              wordmarkClassName="text-2xl"
+            />
           </Link>
           {tagline && (
             <p className="mt-3 text-sm text-muted-foreground">{tagline}</p>

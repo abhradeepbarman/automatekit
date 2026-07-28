@@ -41,9 +41,7 @@ export const steps = pgTable(
       .$onUpdate(() => new Date())
       .notNull(),
   },
-  (t) => [
-    uniqueIndex('steps_workflow_id_index_unq').on(t.workflowId, t.index),
-  ],
+  (t) => [uniqueIndex('steps_workflow_id_index_unq').on(t.workflowId, t.index)],
 );
 
 export const stepRelations = relations(steps, ({ one, many }) => ({

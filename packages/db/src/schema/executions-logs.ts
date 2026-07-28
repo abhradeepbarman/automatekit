@@ -6,21 +6,18 @@ import { workflows } from './workflows';
 
 export const executionLogs = pgTable('execution_logs', {
   id: uuid('id').notNull().primaryKey().defaultRandom(),
-  // Cascade: logs are removed only when the parent workflow is deleted.
   workflowId: uuid('workflow_id')
     .notNull()
     .references(() => workflows.id, {
       onDelete: 'cascade',
       onUpdate: 'no action',
     }),
-  // set null + nullable: a deleted step must NOT delete its logs. app /
-  // stepType below are denormalized so the log stays readable after the step
-  // is gone.
   stepId: uuid('step_id').references(() => steps.id, {
     onDelete: 'set null',
     onUpdate: 'no action',
   }),
   app: varchar('app').notNull(),
+  eventName: varchar('event_name'),
   stepType: varchar('step_type', {
     enum: [StepType.TRIGGER, StepType.ACTION],
   }).notNull(),

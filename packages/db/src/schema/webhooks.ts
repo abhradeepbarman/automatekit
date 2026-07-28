@@ -5,27 +5,31 @@ import { varchar } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 import { steps } from './steps';
 
-export const webhooks = pgTable('webhooks', {
-  id: uuid('id').primaryKey().defaultRandom().notNull(),
-  workflowId: uuid('workflow_id')
-    .notNull()
-    .references(() => workflows.id, {
-      onDelete: 'cascade',
-      onUpdate: 'no action',
-    }),
-  stepId: uuid('step_id')
-    .notNull()
-    .references(() => steps.id, {
-      onDelete: 'cascade',
-      onUpdate: 'no action',
-    }),
-  path: varchar('path').notNull(),
-  createdAt: timestamp('created_at').defaultNow().notNull(),
-  updatedAt: timestamp('updated_at')
-    .defaultNow()
-    .$onUpdate(() => new Date())
-    .notNull(),
-}, (t) => [uniqueIndex('webhooks_path_unq').on(t.path)]);
+export const webhooks = pgTable(
+  'webhooks',
+  {
+    id: uuid('id').primaryKey().defaultRandom().notNull(),
+    workflowId: uuid('workflow_id')
+      .notNull()
+      .references(() => workflows.id, {
+        onDelete: 'cascade',
+        onUpdate: 'no action',
+      }),
+    stepId: uuid('step_id')
+      .notNull()
+      .references(() => steps.id, {
+        onDelete: 'cascade',
+        onUpdate: 'no action',
+      }),
+    path: varchar('path').notNull(),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+    updatedAt: timestamp('updated_at')
+      .defaultNow()
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+  (t) => [uniqueIndex('webhooks_path_unq').on(t.path)],
+);
 
 export const webhookRelations = relations(webhooks, ({ one }) => ({
   workflow: one(workflows, {

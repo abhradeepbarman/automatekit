@@ -1,8 +1,6 @@
 import { z } from 'zod';
 import { type IAction } from '@repo/common/types';
 
-// Shared by the frontend form and backend step validation. `axios` is imported
-// lazily in `run` so this module stays client-safe and tree-shakes cleanly.
 export const sendEmailSchema = z.object({
   to: z.string().email('Invalid email address'),
   subject: z.string().min(1, 'Subject is required'),
@@ -14,6 +12,14 @@ export interface SendEmailMetadata {
   subject: string;
   body: string;
 }
+
+const stripHeaderBreaks = (value: string) => value.replace(/[\r\n]+/g, ' ');
+
+const encodeHeaderValue = (value: string) => {
+  const clean = stripHeaderBreaks(value);
+  if (/^[\x20-\x7E]*$/.test(clean)) return clean;
+  return `=?UTF-8?B?${Buffer.from(clean, 'utf8').toString('base64')}?=`;
+};
 
 const sendEmailDataAvailable = [
   { key: 'receiverEmail', label: 'Receiver Email', type: 'string' },
@@ -33,13 +39,13 @@ export const sendEmail: IAction<SendEmailMetadata, SendEmailDataAvailable> = {
   run: async ({ metadata, accessToken }) => {
     try {
       const axios = (await import('axios')).default;
-      const to = metadata.to;
+      const to = stripHeaderBreaks(metadata.to);
       const subject = metadata.subject;
       const body = metadata.body;
 
       const email = [
         `To: ${to}`,
-        `Subject: ${subject}`,
+        `Subject: ${encodeHeaderValue(subject)}`,
         'Content-Type: text/plain; charset=utf-8',
         '',
         body,
@@ -73,10 +79,16 @@ export const sendEmail: IAction<SendEmailMetadata, SendEmailDataAvailable> = {
         },
       };
     } catch (error: Error | any) {
+      const statusCode = error?.response?.status ?? 500;
+      const providerMessage =
+        error?.response?.data?.error?.message ?? error?.message;
+
       return {
         success: false,
-        message: 'Error sending email',
-        statusCode: 500,
+        message: providerMessage
+          ? `Error sending email: ${providerMessage}`
+          : 'Error sending email',
+        statusCode,
         error,
       };
     }

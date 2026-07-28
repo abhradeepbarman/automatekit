@@ -73,117 +73,115 @@ export default function Login() {
   return (
     <AuthShell tagline="Automate smarter. Work faster.">
       <Card className="border-border/60 shadow-xl shadow-foreground/5">
-          <CardHeader className="space-y-1 pb-6">
-            <CardTitle className="text-2xl text-center font-semibold">
-              Welcome back
-            </CardTitle>
-            <CardDescription className="text-center">
-              Enter your credentials to access your dashboard
-            </CardDescription>
-          </CardHeader>
+        <CardHeader className="space-y-1 pb-6">
+          <CardTitle className="text-2xl text-center font-semibold">
+            Welcome back
+          </CardTitle>
+          <CardDescription className="text-center">
+            Enter your credentials to access your dashboard
+          </CardDescription>
+        </CardHeader>
 
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-              <CardContent className="space-y-4">
-                {/* Email */}
-                <FormField
-                  control={form.control}
-                  name="email"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Email</FormLabel>
-                      <FormControl>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            <CardContent className="space-y-4">
+              {/* Email */}
+              <FormField
+                control={form.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Email</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="abc@gmail.com"
+                        autoComplete="email"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {/* Password */}
+              <FormField
+                control={form.control}
+                name="password"
+                render={({ field }) => (
+                  <FormItem>
+                    <div className="flex items-center justify-between">
+                      <FormLabel>Password</FormLabel>
+                      <Link
+                        to="/forgot-password"
+                        className="text-xs text-primary underline"
+                      >
+                        Forgot password?
+                      </Link>
+                    </div>
+                    <FormControl>
+                      <div className="relative">
                         <Input
-                          placeholder="abc@gmail.com"
-                          autoComplete="email"
+                          type={showPassword ? 'text' : 'password'}
+                          placeholder="••••••••"
+                          autoComplete="current-password"
                           {...field}
                         />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                {/* Password */}
-                <FormField
-                  control={form.control}
-                  name="password"
-                  render={({ field }) => (
-                    <FormItem>
-                      <div className="flex items-center justify-between">
-                        <FormLabel>Password</FormLabel>
-                        <Link
-                          to="/forgot-password"
-                          className="text-xs text-primary underline"
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                          onClick={() => setShowPassword(!showPassword)}
                         >
-                          Forgot password?
-                        </Link>
+                          {showPassword ? (
+                            <EyeOff className="h-4 w-4 text-muted-foreground" />
+                          ) : (
+                            <Eye className="h-4 w-4 text-muted-foreground" />
+                          )}
+                        </Button>
                       </div>
-                      <FormControl>
-                        <div className="relative">
-                          <Input
-                            type={showPassword ? 'text' : 'password'}
-                            placeholder="••••••••"
-                            autoComplete="current-password"
-                            {...field}
-                          />
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                            onClick={() => setShowPassword(!showPassword)}
-                          >
-                            {showPassword ? (
-                              <EyeOff className="h-4 w-4 text-muted-foreground" />
-                            ) : (
-                              <Eye className="h-4 w-4 text-muted-foreground" />
-                            )}
-                          </Button>
-                        </div>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-                <Button
-                  type="submit"
-                  className="w-full h-11 text-base font-medium"
-                  disabled={form.formState.isSubmitting}
-                >
-                  {form.formState.isSubmitting ? 'Signing in...' : 'Sign in'}
-                </Button>
+              <Button
+                type="submit"
+                className="w-full h-11 text-base font-medium"
+                disabled={form.formState.isSubmitting}
+              >
+                {form.formState.isSubmitting ? 'Signing in...' : 'Sign in'}
+              </Button>
 
-                <div className="relative">
-                  <div className="absolute inset-0 flex items-center">
-                    <span className="w-full border-t" />
-                  </div>
-                  <div className="relative flex justify-center text-xs uppercase">
-                    <span className="bg-card px-2 text-muted-foreground">
-                      or
-                    </span>
-                  </div>
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                  <span className="w-full border-t" />
                 </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-card px-2 text-muted-foreground">or</span>
+                </div>
+              </div>
 
-                <GoogleLoginButton />
-              </CardContent>
-            </form>
-          </Form>
+              <GoogleLoginButton />
+            </CardContent>
+          </form>
+        </Form>
 
-          <CardFooter className="flex flex-col gap-4 border-t bg-muted/40 pt-6 text-sm text-muted-foreground">
-            <p>
-              Don&apos;t have an account?{' '}
-              <Link to="/register" className="text-primary underline">
-                Sign up
-              </Link>
-            </p>
+        <CardFooter className="flex flex-col gap-4 border-t bg-muted/40 pt-6 text-sm text-muted-foreground">
+          <p>
+            Don&apos;t have an account?{' '}
+            <Link to="/register" className="text-primary underline">
+              Sign up
+            </Link>
+          </p>
 
-            <p className="text-xs">
-              © {new Date().getFullYear()} AutomateKit • All rights reserved
-            </p>
-          </CardFooter>
-        </Card>
+          <p className="text-xs">
+            © {new Date().getFullYear()} AutomateKit • All rights reserved
+          </p>
+        </CardFooter>
+      </Card>
     </AuthShell>
   );
 }

@@ -7,10 +7,32 @@ type EncryptedData = {
   tag: string;
 };
 
+const KEY_BYTES = 32; // AES-256
+
+let cachedKey: Buffer | null = null;
+
+const getKey = (): Buffer => {
+  if (cachedKey) return cachedKey;
+
+  const raw = process.env.ENCRYPTION_KEY;
+  if (!raw) {
+    throw new Error('ENCRYPTION_KEY is not set');
+  }
+
+  const key = Buffer.from(raw, 'hex');
+  if (key.length !== KEY_BYTES) {
+    throw new Error(
+      `ENCRYPTION_KEY must be ${KEY_BYTES} bytes (${KEY_BYTES * 2} hex characters), got ${key.length}`,
+    );
+  }
+
+  cachedKey = key;
+  return key;
+};
+
 export const encryptSymmetric = (text: string): EncryptedData => {
-  const key = Buffer.from(process.env.ENCRYPTION_KEY!, 'hex');
   const iv = crypto.randomBytes(12);
-  const cipher = crypto.createCipheriv('aes-256-gcm', key, iv);
+  const cipher = crypto.createCipheriv('aes-256-gcm', getKey(), iv);
 
   let ciphertext = cipher.update(text, 'utf8', 'base64');
   ciphertext += cipher.final('base64');
@@ -29,10 +51,9 @@ export const decryptSymmetric = (
   iv: string,
   tag: string,
 ): string => {
-  const key = Buffer.from(process.env.ENCRYPTION_KEY!, 'hex');
   const decipher = crypto.createDecipheriv(
     'aes-256-gcm',
-    key,
+    getKey(),
     Buffer.from(iv, 'base64'),
   );
 

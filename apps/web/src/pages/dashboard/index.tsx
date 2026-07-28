@@ -103,8 +103,6 @@ const Dashboard = () => {
   const workflows = workflowsData?.workflows || [];
   const pagination = workflowsData?.pagination;
 
-  // Clamp the page if it falls out of range (e.g. after deleting the last
-  // item on the last page).
   useEffect(() => {
     if (
       pagination &&

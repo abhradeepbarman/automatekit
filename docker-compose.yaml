@@ -3,15 +3,17 @@ services:
     build:
       context: .
       dockerfile: docker/Dockerfile.web
-    image: automatekit-web:local
+      args:
+        VITE_APP_BASE_URL: ${VITE_APP_BASE_URL}
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL}
+    image: ${IMAGE_PREFIX:-automatekit}/automatekit-web:${IMAGE_TAG:-local}
     container_name: automatekit-web
     restart: always
     ports:
-      - "3000:80"
-    env_file:
-      - .env
+      - '${WEB_PORT:-3000}:80'
     depends_on:
-      - server
+      server:
+        condition: service_healthy
     networks:
       - automatekit
 
@@ -19,16 +21,31 @@ services:
     build:
       context: .
       dockerfile: docker/Dockerfile.server
-    image: automatekit-server:local
+    image: ${IMAGE_PREFIX:-automatekit}/automatekit-server:${IMAGE_TAG:-local}
     container_name: automatekit-server
     restart: always
     ports:
-      - "8000:8000"
+      - '${SERVER_PORT:-8000}:8000'
     env_file:
       - .env
+    # Wait until the datastores accept connections, not merely until created.
     depends_on:
-      - postgres
-      - redis
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          "fetch('http://127.0.0.1:8000/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 30s
+      timeout: 5s
+      start_period: 20s
+      retries: 3
     networks:
       - automatekit
 
@@ -36,14 +53,16 @@ services:
     build:
       context: .
       dockerfile: docker/Dockerfile.executor
-    image: automatekit-executor:local
+    image: ${IMAGE_PREFIX:-automatekit}/automatekit-executor:${IMAGE_TAG:-local}
     container_name: automatekit-executor
     restart: always
     env_file:
       - .env
     depends_on:
-      - postgres
-      - redis
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     networks:
       - automatekit
 
@@ -55,6 +74,12 @@ services:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: ${POSTGRES_DB}
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
     volumes:
       - automatekit_postgres_data:/var/lib/postgresql/data
     networks:
@@ -64,7 +89,15 @@ services:
     image: redis:7-alpine
     container_name: automatekit-redis
     restart: unless-stopped
-    command: redis-server --requirepass ${REDIS_PASSWORD}
+    command: redis-server --requirepass ${REDIS_PASSWORD} --appendonly yes
+    healthcheck:
+      test: ['CMD-SHELL', 'redis-cli -a "$$REDIS_PASSWORD" ping | grep -q PONG']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
     volumes:
       - automatekit_redis_data:/data
     networks:

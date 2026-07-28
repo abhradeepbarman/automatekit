@@ -1,6 +1,6 @@
 import { addStepSchema, updateStepSchema } from '@repo/common/validators';
 import db from '@repo/db';
-import { steps, webhooks, workflows } from '@repo/db/schema';
+import { connections, steps, webhooks, workflows } from '@repo/db/schema';
 import { and, eq, gte } from 'drizzle-orm';
 import { NextFunction, Request, Response } from 'express';
 import { asyncHandler, CustomErrorHandler, ResponseHandler } from '../utils';
@@ -8,6 +8,19 @@ import { AppType, SystemEvent } from '@repo/common/types';
 import { getEventSchema } from '@repo/integrations/schemas';
 import { nanoid } from 'nanoid';
 import config from '../config';
+
+const isConnectionOwnedByUser = async (
+  connectionId: string,
+  userId: string,
+) => {
+  const connection = await db.query.connections.findFirst({
+    where: and(
+      eq(connections.id, connectionId),
+      eq(connections.userId, userId),
+    ),
+  });
+  return Boolean(connection);
+};
 
 export const addStep = asyncHandler(
   async (req: Request, res: Response, next: NextFunction) => {
@@ -27,10 +40,19 @@ export const addStep = asyncHandler(
       return next(CustomErrorHandler.notAllowed());
     }
 
-    // Validate config fields against the same schema the frontend form uses.
     const eventSchema = getEventSchema(app, eventName);
-    if (eventSchema && !eventSchema.safeParse(metadata?.data?.fields ?? {}).success) {
+    if (
+      eventSchema &&
+      !eventSchema.safeParse(metadata?.data?.fields ?? {}).success
+    ) {
       return next(CustomErrorHandler.badRequest('Invalid step configuration'));
+    }
+
+    if (
+      connectionId &&
+      !(await isConnectionOwnedByUser(connectionId, req.user.id))
+    ) {
+      return next(CustomErrorHandler.notAllowed('Invalid connection'));
     }
 
     let [newStep] = await db
@@ -194,6 +216,13 @@ export const updateStep = asyncHandler(
 
     if (stepDetails.workflows.userId !== req.user.id) {
       return next(CustomErrorHandler.notAllowed());
+    }
+
+    if (
+      body.connectionId &&
+      !(await isConnectionOwnedByUser(body.connectionId, req.user.id))
+    ) {
+      return next(CustomErrorHandler.notAllowed('Invalid connection'));
     }
 
     const [updatedStep] = await db

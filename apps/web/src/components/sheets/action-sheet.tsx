@@ -43,7 +43,6 @@ interface IActionSheetProps {
   sourceNodeId: string;
   setSelectedSourceNodeId: Dispatch<SetStateAction<string>>;
   setActionSheetOpen: Dispatch<SetStateAction<boolean>>;
-  handleEditClick: () => void;
   handleDeleteClick: (nodeId: string) => void;
   dataAvailable?: IntegrationDataField[];
 }
@@ -57,7 +56,6 @@ const ActionSheet = ({
   sourceNodeId,
   setSelectedSourceNodeId,
   setActionSheetOpen,
-  handleEditClick,
   handleDeleteClick,
   dataAvailable,
 }: IActionSheetProps) => {
@@ -105,7 +103,6 @@ const ActionSheet = ({
     return appDetails?.actions.find((a) => a.id === commonFields.actionId);
   }, [appDetails, commonFields.appId, commonFields.actionId]);
 
-
   const clearFields = () => {
     setCommonFields({
       appId: '',
@@ -138,7 +135,6 @@ const ActionSheet = ({
         connectionId: 'Connection is required',
       }));
 
-    // Find the source node to calculate position
     const sourceNode = nodes.find((n) => n.id === sourceNodeId);
     if (!sourceNode) {
       toast.error('Error adding action', {
@@ -147,7 +143,6 @@ const ActionSheet = ({
       return;
     }
 
-    // Calculate the correct index by counting only actual step nodes
     const stepNodes = nodes.filter(
       (n) => n.type === 'triggerNode' || n.type === 'actionNode',
     );
@@ -181,7 +176,6 @@ const ActionSheet = ({
             ...newStepDetails.metadata,
             data: {
               ...newStepDetails.metadata.data,
-              onEditClick: () => handleEditClick(),
               onDeleteClick: () =>
                 handleDeleteClick(newStepDetails.metadata.id),
             },

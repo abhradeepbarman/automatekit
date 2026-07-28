@@ -249,8 +249,6 @@ export const resetPassword = asyncHandler(
   },
 );
 
-// Google OAuth2 login and callback handlers
-
 export const googleLogin = asyncHandler(
   async (_req: Request, res: Response, next: NextFunction) => {
     if (!config.GOOGLE_AUTH_CLIENT_ID || !config.GOOGLE_AUTH_CLIENT_SECRET) {

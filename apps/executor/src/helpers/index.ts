@@ -6,27 +6,31 @@ import { executionLogs } from '@repo/db/schema';
 export async function createExecutionLog(
   workflowId: string,
   app: string,
-  stepId: string,
+  stepId: string | null,
+  eventName: string,
   stepType: StepType,
   message: string,
   jobId: string,
   status: ExecutionStatus = ExecutionStatus.PENDING,
 ): Promise<string> {
   try {
-    if (
-      !workflowId ||
-      !stepId ||
-      !jobId ||
-      message === undefined ||
-      message === null
-    ) {
+    if (!workflowId || !jobId || message === undefined || message === null) {
       logger.warn('Invalid parameters passed to createExecutionLog');
       return '';
     }
 
     const [newLog] = await db
       .insert(executionLogs)
-      .values({ workflowId, app, stepId, stepType, message, jobId, status })
+      .values({
+        workflowId,
+        app,
+        stepId,
+        eventName,
+        stepType,
+        message,
+        jobId,
+        status,
+      })
       .returning();
 
     if (!newLog) return '';
@@ -38,24 +42,35 @@ export async function createExecutionLog(
   }
 }
 
-export function replaceVariables(
-  fields: Record<string, any>,
-  variables: Record<string, string>,
-) {
-  const result: any = {};
+export function replaceVariables<T>(fields: T, variables: unknown): T {
+  const lookup: Record<string, any> =
+    variables && typeof variables === 'object'
+      ? (variables as Record<string, any>)
+      : {};
 
-  Object.keys(fields).forEach((key) => {
-    const value = fields[key];
-
+  const substitute = (value: any): any => {
     if (typeof value === 'string') {
-      result[key] = value.replace(/{{(.*?)}}/g, (_, variableId) => {
-        const key = variableId.trim();
-        return variables[key] ?? '';
+      return value.replace(/{{(.*?)}}/g, (_match, variableId) => {
+        const resolved = lookup[String(variableId).trim()];
+        if (resolved === undefined || resolved === null) return '';
+        return typeof resolved === 'object'
+          ? JSON.stringify(resolved)
+          : String(resolved);
       });
-    } else {
-      result[key] = value;
     }
-  });
 
-  return result;
+    if (Array.isArray(value)) {
+      return value.map(substitute);
+    }
+
+    if (value && typeof value === 'object' && value.constructor === Object) {
+      return Object.fromEntries(
+        Object.entries(value).map(([key, inner]) => [key, substitute(inner)]),
+      );
+    }
+
+    return value;
+  };
+
+  return substitute(fields) as T;
 }

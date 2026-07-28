@@ -9,7 +9,10 @@ const OAuthCallback = () => {
 
     if (!code) return;
 
-    window.opener.postMessage({ type: 'OAUTH_SUCCESS', code }, '*');
+    window.opener.postMessage(
+      { type: 'OAUTH_SUCCESS', code },
+      window.location.origin,
+    );
 
     window.close();
   }, []);

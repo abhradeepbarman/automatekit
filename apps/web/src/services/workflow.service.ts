@@ -57,6 +57,8 @@ export interface IExecutionLog {
   workflowId: string;
   app: string;
   stepId: string | null;
+  /** Integration event slug (e.g. 'send-email'); use this for display lookups. */
+  eventName: string | null;
   stepType: StepType;
   jobId: string;
   message: string;

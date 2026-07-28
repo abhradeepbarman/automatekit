@@ -59,7 +59,8 @@ jobs:
           script: |
             set -e
             cd /var/www/automatekit/prod
-            export DOCKER_USERNAME=${{ secrets.DOCKER_USERNAME }}
-            docker compose --env-file .env -f docker-compose.prod.yaml pull
-            docker compose --env-file .env -f docker-compose.prod.yaml up -d
+            export IMAGE_PREFIX=${{ secrets.DOCKER_USERNAME }}
+            export IMAGE_TAG=prod-${{ github.sha }}
+            docker compose --env-file .env pull
+            docker compose --env-file .env up -d
             docker image prune -f
