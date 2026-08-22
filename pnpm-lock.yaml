@@ -90,9 +90,6 @@ importers:
       '@repo/queue':
         specifier: workspace:*
         version: link:../../packages/queue
-      axios:
-        specifier: ^1.13.2
-        version: 1.13.6
       bcryptjs:
         specifier: ^3.0.3
         version: 3.0.3
@@ -111,12 +108,6 @@ importers:
       express:
         specifier: ^5.2.1
         version: 5.2.1
-      express-rate-limit:
-        specifier: ^8.6.1
-        version: 8.6.1(express@5.2.1)
-      helmet:
-        specifier: ^8.3.0
-        version: 8.3.0
       jsonwebtoken:
         specifier: ^9.0.3
         version: 9.0.3
@@ -126,9 +117,6 @@ importers:
       nodemailer:
         specifier: ^8.0.1
         version: 8.0.2
-      pg:
-        specifier: ^8.16.3
-        version: 8.20.0
       zod:
         specifier: ^4.3.5
         version: 4.3.6
@@ -145,9 +133,6 @@ importers:
       '@types/cors':
         specifier: ^2.8.19
         version: 2.8.19
-      '@types/dotenv':
-        specifier: ^8.2.3
-        version: 8.2.3
       '@types/express':
         specifier: ^5.0.6
         version: 5.0.6
@@ -157,15 +142,9 @@ importers:
       '@types/nodemailer':
         specifier: ^7.0.11
         version: 7.0.11
-      '@types/pg':
-        specifier: ^8.16.0
-        version: 8.18.0
       cross-env:
         specifier: ^10.1.0
         version: 10.1.0
-      drizzle-kit:
-        specifier: ^0.31.8
-        version: 0.31.9
       tsx:
         specifier: ^4.21.0
         version: 4.21.0
@@ -3015,12 +2994,6 @@ packages:
     resolution: {integrity: sha512-aIL5Fx7mawVa300al2BnEE4iNvo1qETxLrPI/o05L7z6go7fCw1J6EQmbK4FmJ2AS7kgVF/KEZWufBfdClMcPg==}
     engines: {node: '>= 0.6'}
 
-  express-rate-limit@8.6.1:
-    resolution: {integrity: sha512-0D493aP61w0TJ2A0wy27riRsO7FMQ7FK+KUHOKCSfPvYo0R55aiC6emCVgFUeShH0fq0ICPVzNcgoS+BsbXQCA==}
-    engines: {node: '>= 16'}
-    peerDependencies:
-      express: '>= 4.11'
-
   express@5.2.1:
     resolution: {integrity: sha512-hIS4idWWai69NezIdRt2xFVofaF4j+6INOpJlVOLDO8zXGpUVEVzIYk12UUi2JzjEzWL3IOAxcTubgz9Po0yXw==}
     engines: {node: '>= 18'}
@@ -3214,10 +3187,6 @@ packages:
     resolution: {integrity: sha512-0hJU9SCPvmMzIBdZFqNPXWa6dqh7WdH0cII9y+CyS8rG3nL48Bclra9HmKhVVUHyPWNH5Y7xDwAB7bfgSjkUMQ==}
     engines: {node: '>= 0.4'}
 
-  helmet@8.3.0:
-    resolution: {integrity: sha512-Qgpiaws3Sm30Av8Eah6sjMCZZwjlBu+E68rhpCWBshY1lb09HtLwj5GviX0OyQIn+ulUS0iX0AxN5n3tLZzz1w==}
-    engines: {node: '>=18.0.0'}
-
   hermes-estree@0.25.1:
     resolution: {integrity: sha512-0wUoCcLp+5Ev5pDW2OriHC2MJCbwLwuRx+gAqMTOkGKJJiBCLjtrvy4PWUGn6MIVefecRpzoOZ/UV6iGdOr+Cw==}
 
@@ -3258,10 +3227,6 @@ packages:
   ioredis@5.9.3:
     resolution: {integrity: sha512-VI5tMCdeoxZWU5vjHWsiE/Su76JGhBvWF1MJnV9ZtGltHk9BmD48oDq8Tj8haZ85aceXZMxLNDQZRVo5QKNgXA==}
     engines: {node: '>=12.22.0'}
-
-  ip-address@10.3.1:
-    resolution: {integrity: sha512-1e9d3kb97NHJTIJDZW9rKqW2h6+dFa50Dy0fpPSMQp2ADje5gvKsXmdiK6dwY5t76TaTt5+P5N1Y/LoToIxP6g==}
-    engines: {node: '>= 12'}
 
   ipaddr.js@1.9.1:
     resolution: {integrity: sha512-0KI/607xoxSToH7GjN1FfSbLoU0+btTicjsQSWQlh/hZykN8KpmMf7uYwPW3R+akZ6R/w18ZlXSHBYXiYUPO3g==}
@@ -7022,14 +6987,6 @@ snapshots:
 
   etag@1.8.1: {}
 
-  express-rate-limit@8.6.1(express@5.2.1):
-    dependencies:
-      debug: 4.4.3
-      express: 5.2.1
-      ip-address: 10.3.1
-    transitivePeerDependencies:
-      - supports-color
-
   express@5.2.1:
     dependencies:
       accepts: 2.0.0
@@ -7240,8 +7197,6 @@ snapshots:
     dependencies:
       function-bind: 1.1.2
 
-  helmet@8.3.0: {}
-
   hermes-estree@0.25.1: {}
 
   hermes-parser@0.25.1:
@@ -7292,8 +7247,6 @@ snapshots:
       standard-as-callback: 2.1.0
     transitivePeerDependencies:
       - supports-color
-
-  ip-address@10.3.1: {}
 
   ipaddr.js@1.9.1: {}
 
