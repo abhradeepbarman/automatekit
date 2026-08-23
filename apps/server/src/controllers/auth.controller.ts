@@ -12,7 +12,7 @@ import crypto from 'crypto';
 import { eq } from 'drizzle-orm';
 import { NextFunction, Request, Response } from 'express';
 import jwt, { JwtPayload } from 'jsonwebtoken';
-import config from '../config';
+import { envConfig } from '../config/env';
 import {
   BCRYPT_ROUNDS,
   GOOGLE_AUTH_URL,
@@ -140,7 +140,7 @@ export const refreshAccessToken = asyncHandler(
       return next(CustomErrorHandler.unAuthorized());
     }
 
-    const decoded = jwt.verify(token, config.REFRESH_SECRET) as JwtPayload;
+    const decoded = jwt.verify(token, envConfig.REFRESH_SECRET) as JwtPayload;
     if (!decoded?.id) {
       return next(CustomErrorHandler.unAuthorized());
     }
@@ -200,7 +200,7 @@ export const sendForgotPasswordEmail = asyncHandler(
       expiresAt: new Date(Date.now() + 60 * 60 * 1000),
     });
 
-    const link = `${config.APP_URL}/reset-password/${rawToken}`;
+    const link = `${envConfig.APP_URL}/reset-password/${rawToken}`;
     const html = forgotPasswordEmailTemplate(existingUser.name, link);
     await sendEmail({ to: email, subject: 'Reset Your Password', body: html });
 
@@ -251,7 +251,7 @@ export const resetPassword = asyncHandler(
 
 export const googleLogin = asyncHandler(
   async (_req: Request, res: Response, next: NextFunction) => {
-    if (!config.GOOGLE_AUTH_CLIENT_ID || !config.GOOGLE_AUTH_CLIENT_SECRET) {
+    if (!envConfig.GOOGLE_AUTH_CLIENT_ID || !envConfig.GOOGLE_AUTH_CLIENT_SECRET) {
       return next(
         CustomErrorHandler.serverError('Google login is not configured'),
       );
@@ -259,20 +259,20 @@ export const googleLogin = asyncHandler(
 
     const state = jwt.sign(
       { n: crypto.randomBytes(16).toString('hex') },
-      config.ACCESS_SECRET,
+      envConfig.ACCESS_SECRET,
       { expiresIn: '10m' },
     );
 
     res.cookie(OAUTH_STATE_COOKIE, state, {
       httpOnly: true,
       maxAge: 10 * 60 * 1000,
-      secure: config.NODE_ENV === 'production',
-      sameSite: config.NODE_ENV === 'production' ? 'none' : 'lax',
+      secure: envConfig.NODE_ENV === 'production',
+      sameSite: envConfig.NODE_ENV === 'production' ? 'none' : 'lax',
     });
 
     const authUrl = new URL(GOOGLE_AUTH_URL);
-    authUrl.searchParams.set('client_id', config.GOOGLE_AUTH_CLIENT_ID);
-    authUrl.searchParams.set('redirect_uri', config.GOOGLE_AUTH_REDIRECT_URI);
+    authUrl.searchParams.set('client_id', envConfig.GOOGLE_AUTH_CLIENT_ID);
+    authUrl.searchParams.set('redirect_uri', envConfig.GOOGLE_AUTH_REDIRECT_URI);
     authUrl.searchParams.set('response_type', 'code');
     authUrl.searchParams.set('scope', 'openid email profile');
     authUrl.searchParams.set('state', state);
@@ -296,7 +296,7 @@ export const googleCallback = asyncHandler(
     if (!code || !state || !cookieState || state !== cookieState) {
       return next(CustomErrorHandler.unAuthorized('Invalid OAuth state'));
     }
-    jwt.verify(state, config.ACCESS_SECRET);
+    jwt.verify(state, envConfig.ACCESS_SECRET);
 
     const googleAccessToken = await getGoogleTokens(code);
     const profile = await getGoogleProfile(googleAccessToken);
@@ -335,6 +335,6 @@ export const googleCallback = asyncHandler(
 
     await issueSession(res, user.id);
 
-    return res.redirect(`${config.APP_URL}/auth/google-callback`);
+    return res.redirect(`${envConfig.APP_URL}/auth/google-callback`);
   },
 );

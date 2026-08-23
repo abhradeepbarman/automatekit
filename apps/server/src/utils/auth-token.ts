@@ -1,16 +1,16 @@
 import crypto from 'crypto';
 import { Response } from 'express';
 import jwt from 'jsonwebtoken';
-import config from '../config';
+import { envConfig } from '../config/env';
 
 export const hashToken = (token: string) =>
   crypto.createHash('sha256').update(token).digest('hex');
 
 export const generateTokens = (userId: string) => {
-  const accessToken = jwt.sign({ id: userId }, config.ACCESS_SECRET, {
+  const accessToken = jwt.sign({ id: userId }, envConfig.ACCESS_SECRET, {
     expiresIn: '1h',
   });
-  const refreshToken = jwt.sign({ id: userId }, config.REFRESH_SECRET, {
+  const refreshToken = jwt.sign({ id: userId }, envConfig.REFRESH_SECRET, {
     expiresIn: '7d',
   });
   return { accessToken, refreshToken };
@@ -21,7 +21,7 @@ export const setCookies = (
   accessToken: string,
   refreshToken: string,
 ) => {
-  const secure = config.NODE_ENV === 'production';
+  const secure = envConfig.NODE_ENV === 'production';
   const sameSite: 'none' | 'lax' = secure ? 'none' : 'lax';
 
   res.cookie('access_token', accessToken, {

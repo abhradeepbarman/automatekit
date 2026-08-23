@@ -1,9 +1,9 @@
 import { NextFunction, Request, Response } from 'express';
 import jwt, { JwtPayload } from 'jsonwebtoken';
 import CustomErrorHandler from '../utils/custom-error-handler';
-import config from '../config';
+import { envConfig } from '../config/env';
 
-const auth = async (req: Request, res: Response, next: NextFunction) => {
+export const auth = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const token =
       req.headers.authorization?.split(' ')[1] || req.cookies['access_token'];
@@ -12,7 +12,7 @@ const auth = async (req: Request, res: Response, next: NextFunction) => {
       return next(CustomErrorHandler.unAuthorized());
     }
 
-    const decoded = jwt.verify(token, config.ACCESS_SECRET) as JwtPayload;
+    const decoded = jwt.verify(token, envConfig.ACCESS_SECRET) as JwtPayload;
 
     if (!decoded || !decoded.id) {
       return next(CustomErrorHandler.unAuthorized());
@@ -27,5 +27,3 @@ const auth = async (req: Request, res: Response, next: NextFunction) => {
     next(error);
   }
 };
-
-export default auth;

@@ -6,7 +6,7 @@ import { formatError } from '../utils/format-error';
 import CustomErrorHandler from '../utils/custom-error-handler';
 import ResponseHandler from '../utils/response-handler';
 
-const errorHandler = (
+export const errorHandler = (
   err: Error,
   req: Request,
   res: Response,
@@ -42,5 +42,3 @@ const errorHandler = (
 
   res.status(statusCode).json(ResponseHandler(statusCode, message, data));
 };
-
-export default errorHandler;

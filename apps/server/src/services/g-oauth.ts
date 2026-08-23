@@ -1,4 +1,4 @@
-import config from '../config';
+import { envConfig } from '../config/env';
 import { GOOGLE_TOKEN_URL, GOOGLE_USERINFO_URL } from '../constants';
 import CustomErrorHandler from '../utils/custom-error-handler';
 
@@ -13,9 +13,9 @@ export const getGoogleTokens = async (code: string): Promise<string> => {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     body: new URLSearchParams({
-      client_id: config.GOOGLE_AUTH_CLIENT_ID,
-      client_secret: config.GOOGLE_AUTH_CLIENT_SECRET,
-      redirect_uri: config.GOOGLE_AUTH_REDIRECT_URI,
+      client_id: envConfig.GOOGLE_AUTH_CLIENT_ID,
+      client_secret: envConfig.GOOGLE_AUTH_CLIENT_SECRET,
+      redirect_uri: envConfig.GOOGLE_AUTH_REDIRECT_URI,
       grant_type: 'authorization_code',
       code,
     }).toString(),

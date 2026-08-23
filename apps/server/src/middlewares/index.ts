@@ -1,2 +1,2 @@
-export { default as auth } from './auth.middleware';
-export { default as errorHandler } from './error-handler.middleware';
+export * from './auth';
+export * from './error-handler';

@@ -5,7 +5,7 @@ import { asyncHandler, CustomErrorHandler, ResponseHandler } from '../utils';
 import db from '@repo/db';
 import { connections } from '@repo/db/schema';
 import { encryptSymmetric } from '@repo/common/utils';
-import config from '../config';
+import { envConfig } from '../config/env';
 
 export const getAuthUrl = asyncHandler(
   async (req: Request, res: Response, next: NextFunction) => {
@@ -203,7 +203,7 @@ const renderSuccessPage = (code: string, message: string) => {
         <p>You can close this window.</p>
         <div id="oauth-payload"
              data-code="${escapeHtml(code)}"
-             data-origin="${escapeHtml(config.APP_URL)}"></div>
+             data-origin="${escapeHtml(envConfig.APP_URL)}"></div>
         <script>
           (function () {
             var el = document.getElementById('oauth-payload');

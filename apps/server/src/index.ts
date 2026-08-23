@@ -1,7 +1,7 @@
 import cookieParser from 'cookie-parser';
 import cors from 'cors';
 import express, { Application, Request, Response } from 'express';
-import config from './config';
+import { envConfig } from './config/env';
 import { errorHandler } from './middlewares';
 import {
   authRoutes,
@@ -18,7 +18,7 @@ const app: Application = express();
 
 app.use(
   cors({
-    origin: [config.APP_URL],
+    origin: [envConfig.APP_URL],
     credentials: true,
   }),
 );
@@ -42,8 +42,8 @@ app.use((_req, _res, next) => next(CustomErrorHandler.notFound()));
 
 app.use(errorHandler);
 
-app.listen(config.PORT, () => {
-  console.log(`Server is running on port ${config.PORT}`);
+app.listen(envConfig.PORT, () => {
+  console.log(`Server is running on port ${envConfig.PORT}`);
 });
 
 export default app;

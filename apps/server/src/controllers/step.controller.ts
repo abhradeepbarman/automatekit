@@ -7,7 +7,7 @@ import { asyncHandler, CustomErrorHandler, ResponseHandler } from '../utils';
 import { AppType, SystemEvent } from '@repo/common/types';
 import { getEventSchema } from '@repo/integrations/schemas';
 import { nanoid } from 'nanoid';
-import config from '../config';
+import { envConfig } from '../config/env';
 
 const isConnectionOwnedByUser = async (
   connectionId: string,
@@ -109,7 +109,7 @@ export const addStep = asyncHandler(
           ...metadata.data,
           webhook: {
             id: newWebhook.id,
-            url: `${config.API_URL}/api/v1/webhook/${path}`,
+            url: `${envConfig.API_URL}/api/v1/webhook/${path}`,
           },
         },
       };
