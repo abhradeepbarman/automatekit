@@ -1,6 +1,21 @@
+import type { IAction, ITrigger } from '@repo/common/types';
 import apps from '@repo/integrations';
 import { NextFunction, Request, Response } from 'express';
 import { asyncHandler, ResponseHandler } from '../utils';
+
+const toEvent = ({
+  id,
+  name,
+  description,
+  icon,
+  dataAvailable,
+}: ITrigger | IAction) => ({
+  id,
+  name,
+  description,
+  icon,
+  dataAvailable: dataAvailable ?? [],
+});
 
 export const getIntegrations = asyncHandler(
   async (_req: Request, res: Response, _next: NextFunction) => {
@@ -10,18 +25,8 @@ export const getIntegrations = asyncHandler(
       description: app.description,
       icon: app.icon,
       hasAuth: !!app.auth,
-      triggers: (app.triggers ?? []).map((trigger) => ({
-        id: trigger.id,
-        name: trigger.name,
-        description: trigger.description,
-        dataAvailable: trigger.dataAvailable ?? [],
-      })),
-      actions: (app.actions ?? []).map((action) => ({
-        id: action.id,
-        name: action.name,
-        description: action.description,
-        dataAvailable: action.dataAvailable ?? [],
-      })),
+      triggers: (app.triggers ?? []).map(toEvent),
+      actions: (app.actions ?? []).map(toEvent),
     }));
 
     return res

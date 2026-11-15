@@ -111,6 +111,7 @@ export interface ITrigger<
   id: string;
   name: string;
   description: string;
+  icon?: string;
   schema?: z.ZodType;
   dataAvailable?: TSchema;
   run: (params: {
@@ -129,6 +130,7 @@ export interface IAction<
   id: string;
   name: string;
   description: string;
+  icon?: string;
   schema?: z.ZodType;
   dataAvailable?: TSchema;
   run: (params: {

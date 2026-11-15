@@ -6,6 +6,7 @@ export const timer: ITrigger<z.infer<typeof timerSchema>> = {
   id: SystemEvent.TIMER,
   name: 'Timer',
   description: 'Triggered when a timer is set',
+  icon: '/icons/timer.svg',
   schema: timerSchema,
 
   run: ({ metadata, lastExecutedAt }) => {

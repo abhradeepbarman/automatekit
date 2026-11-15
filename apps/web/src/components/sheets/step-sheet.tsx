@@ -126,7 +126,16 @@ const StepForm = ({
             <SelectContent>
               {events.map((event) => (
                 <SelectItem key={event.id} value={event.id}>
-                  {event.name}
+                  <div className="flex items-center gap-2">
+                    {(event.icon ?? app.icon) && (
+                      <img
+                        src={event.icon ?? app.icon}
+                        alt=""
+                        className="h-5 w-5"
+                      />
+                    )}
+                    {event.name}
+                  </div>
                 </SelectItem>
               ))}
             </SelectContent>

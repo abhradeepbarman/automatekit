@@ -42,7 +42,7 @@ const StepNode = ({
     useEditor();
   const queryClient = useQueryClient();
   const isTrigger = data.type === StepType.TRIGGER;
-  const { app, event } = useFindEvent()(
+  const { app, event, icon } = useFindEvent()(
     data.integration,
     data.type,
     data.eventName,
@@ -89,8 +89,8 @@ const StepNode = ({
 
       <div className="flex items-center gap-3 p-3">
         <div className="grid size-10 shrink-0 place-items-center rounded-lg border bg-muted/40">
-          {app?.icon ? (
-            <img src={app.icon} alt="" className="size-6 object-contain" />
+          {icon ? (
+            <img src={icon} alt="" className="size-6 object-contain" />
           ) : (
             <Zap className="size-4 text-muted-foreground" />
           )}

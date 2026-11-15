@@ -6,7 +6,7 @@ export const gmail: IApp = {
   id: AppType.GMAIL,
   name: 'Gmail',
   description: 'connect to your Gmail account',
-  icon: '/gmail.png',
+  icon: '/icons/gmail.png',
   auth,
   actions: [sendEmail],
 };

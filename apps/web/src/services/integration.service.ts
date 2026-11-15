@@ -10,6 +10,7 @@ export interface IntegrationEvent {
   id: string;
   name: string;
   description: string;
+  icon?: string;
   dataAvailable: IntegrationDataField[];
 }
 

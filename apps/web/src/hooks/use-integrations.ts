@@ -15,6 +15,7 @@ export const useFindEvent = () => {
   return (integration: string, type: StepType, eventName: string) => {
     const app = integrations?.find((a) => a.id === integration);
     const events = type === StepType.TRIGGER ? app?.triggers : app?.actions;
-    return { app, event: events?.find((e) => e.id === eventName) };
+    const event = events?.find((e) => e.id === eventName);
+    return { app, event, icon: event?.icon ?? app?.icon };
   };
 };

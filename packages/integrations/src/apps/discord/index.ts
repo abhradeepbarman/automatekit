@@ -5,6 +5,6 @@ export const discord: IApp = {
   id: AppType.DISCORD,
   name: 'Discord',
   description: 'send messages to your Discord channels',
-  icon: '/discord.png',
+  icon: '/icons/discord.png',
   actions: [sendMessage],
 };

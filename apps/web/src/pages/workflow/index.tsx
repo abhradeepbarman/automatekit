@@ -20,8 +20,9 @@ import {
   applyEdgeChanges,
   applyNodeChanges,
   Background,
+  BackgroundVariant,
+  MarkerType,
   Controls,
-  MiniMap,
   ReactFlow,
   type Connection,
   type Edge,
@@ -31,13 +32,33 @@ import {
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import type { AxiosError } from 'axios';
-import { ArrowLeft, FileText, LoaderCircle, Plus, Save } from 'lucide-react';
+import {
+  ArrowLeft,
+  Check,
+  History,
+  LoaderCircle,
+  Plus,
+  Save,
+  Zap,
+} from 'lucide-react';
 import { useCallback, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { toast } from 'sonner';
 
 type StepNodeType = Node<StepData, 'step'>;
 const nodeTypes = { step: StepNode };
+
+const defaultEdgeOptions = {
+  type: 'smoothstep',
+  pathOptions: { borderRadius: 16 },
+  style: { strokeWidth: 2, stroke: 'var(--muted-foreground)' },
+  markerEnd: {
+    type: MarkerType.ArrowClosed,
+    width: 16,
+    height: 16,
+    color: 'var(--muted-foreground)',
+  },
+};
 
 const toGraph = (workflow: IWorkflowDetails) => ({
   nodes: workflow.steps.map<StepNodeType>((step) => ({
@@ -262,13 +283,15 @@ export default function Workflow() {
           <Button
             variant="outline"
             size="sm"
+            className="shadow-sm"
+            title="Back to dashboard"
             onClick={() => navigate('/dashboard')}
           >
             <ArrowLeft className="h-4 w-4" />
           </Button>
         </div>
 
-        <div className="absolute top-4 left-1/2 z-10 flex max-w-md -translate-x-1/2 items-center gap-2 rounded-md border bg-background/80 p-1 pr-3 backdrop-blur-sm">
+        <div className="absolute top-4 left-1/2 z-10 flex max-w-md -translate-x-1/2 items-center gap-2 rounded-lg border bg-background/90 p-1 pr-3 shadow-sm backdrop-blur">
           <WorkflowTitle workflowId={workflow.id} name={workflow.name} />
           <span className="h-5 w-px shrink-0 bg-border" />
           <span title={switchHint}>
@@ -287,32 +310,48 @@ export default function Workflow() {
           <Button
             variant="outline"
             size="sm"
-            className="gap-2"
+            className="gap-2 shadow-sm"
             onClick={() => setLogsOpen(true)}
           >
-            <FileText className="h-4 w-4" />
+            <History className="h-4 w-4" />
             Executions
           </Button>
-          <Button
-            size="sm"
-            className="gap-2"
-            onClick={() => save()}
-            disabled={!isDirty || isSaving}
-          >
-            {isSaving ? (
-              <LoaderCircle className="h-4 w-4 animate-spin" />
-            ) : (
-              <Save className="h-4 w-4" />
-            )}
-            Save
-          </Button>
+          {isDirty ? (
+            <Button
+              size="sm"
+              className="relative gap-2 shadow-sm"
+              onClick={() => save()}
+              disabled={isSaving}
+            >
+              {isSaving ? (
+                <LoaderCircle className="h-4 w-4 animate-spin" />
+              ) : (
+                <Save className="h-4 w-4" />
+              )}
+              Save
+              <span className="absolute -top-1 -right-1 size-2.5 rounded-full border-2 border-background bg-amber-500" />
+            </Button>
+          ) : (
+            <span className="flex h-8 items-center gap-1.5 px-2 text-sm text-muted-foreground">
+              <Check className="h-4 w-4 text-emerald-500" />
+              Saved
+            </span>
+          )}
         </div>
 
         {!hasTrigger && (
-          <div className="absolute top-1/2 left-1/2 z-10 -translate-x-1/2 -translate-y-1/2">
+          <div className="absolute top-1/2 left-1/2 z-10 flex w-72 -translate-x-1/2 -translate-y-1/2 flex-col items-center gap-3 rounded-xl border bg-background p-6 text-center shadow-sm">
+            <div className="grid size-11 place-items-center rounded-full bg-primary text-primary-foreground">
+              <Zap className="size-5 fill-current" />
+            </div>
+            <div className="space-y-1">
+              <p className="font-semibold">Start with a trigger</p>
+              <p className="text-sm text-muted-foreground">
+                Choose what kicks off this workflow.
+              </p>
+            </div>
             <Button
-              variant="outline"
-              className="h-10 gap-2 border-2 border-dashed"
+              className="w-full gap-2"
               onClick={() => setSheet({ mode: 'add-trigger' })}
             >
               <Plus className="h-4 w-4" />
@@ -330,11 +369,22 @@ export default function Workflow() {
             onEdgesChange={onEdgesChange}
             onConnect={onConnect}
             deleteKeyCode={null}
+            defaultEdgeOptions={defaultEdgeOptions}
+            connectionLineStyle={{ strokeWidth: 2 }}
             fitView
+            fitViewOptions={{ maxZoom: 1 }}
+            className="bg-muted/40"
           >
-            <MiniMap />
-            <Background />
-            <Controls />
+            <Background
+              variant={BackgroundVariant.Dots}
+              gap={18}
+              size={1.2}
+              color="var(--border)"
+            />
+            <Controls
+              showInteractive={false}
+              className="overflow-hidden rounded-lg border bg-background shadow-sm"
+            />
           </ReactFlow>
         </div>
 

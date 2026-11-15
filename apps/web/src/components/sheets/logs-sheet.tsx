@@ -158,15 +158,19 @@ const LogsSheet = ({
 
               <ol className="mt-3 space-y-2">
                 {execution.steps.map((step) => {
-                  const { app, event } = findEvent(
+                  const { event, icon } = findEvent(
                     step.integration,
                     step.stepType,
                     step.eventName,
                   );
                   return (
                     <li key={step.id} className="flex items-start gap-2.5">
-                      {app?.icon && (
-                        <img src={app.icon} alt="" className="mt-0.5 h-5 w-5" />
+                      {icon && (
+                        <img
+                          src={icon}
+                          alt=""
+                          className="mt-0.5 size-5 object-contain"
+                        />
                       )}
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center justify-between gap-2">

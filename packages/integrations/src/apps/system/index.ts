@@ -8,7 +8,7 @@ export const system: IApp = {
   id: AppType.SYSTEM,
   name: 'Built-in',
   description: 'Timers, webhooks, manual runs and HTTP requests',
-  icon: '/system.png',
+  icon: '/icons/built-in.png',
   triggers: [tap, timer, webhook],
   actions: [httpRequest],
 };

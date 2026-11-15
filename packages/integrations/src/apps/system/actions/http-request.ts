@@ -16,6 +16,7 @@ export const httpRequest: IAction<HttpRequestConfig> = {
   id: 'http-request',
   name: 'HTTP Request',
   description: 'Send a request to any URL',
+  icon: '/icons/http-request.svg',
   schema: httpRequestSchema,
   dataAvailable: [
     { key: 'status', label: 'Status code', type: 'number' },

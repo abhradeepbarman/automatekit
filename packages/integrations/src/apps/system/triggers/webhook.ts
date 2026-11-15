@@ -5,6 +5,7 @@ export const webhook: ITrigger<WebhookConfig> = {
   id: SystemEvent.WEBHOOK,
   name: 'Webhook',
   description: 'Triggered when your webhook URL receives a request',
+  icon: '/icons/webhook.svg',
   schema: webhookSchema,
   dataAvailable: [
     { key: 'body', label: 'Body', type: 'object' },

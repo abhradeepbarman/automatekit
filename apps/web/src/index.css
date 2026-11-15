@@ -213,3 +213,18 @@
   height: 0;
   pointer-events: none;
 }
+
+.react-flow__controls-button {
+  border-bottom-color: var(--border);
+  background: var(--background);
+  color: var(--foreground);
+}
+
+.react-flow__controls-button:hover {
+  background: var(--muted);
+}
+
+.react-flow__edge.selected .react-flow__edge-path,
+.react-flow__edge:hover .react-flow__edge-path {
+  stroke: var(--primary) !important;
+}
