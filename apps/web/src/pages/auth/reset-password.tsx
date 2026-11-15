@@ -50,14 +50,14 @@ export default function ResetPassword() {
         values.confirmPassword,
       ),
     onSuccess: () => {
-      toast.success('Password reset successfully!', {
+      toast.success('Password updated', {
         description: 'You can now sign in with your new password.',
       });
       navigate('/login');
     },
     onError: (error: AxiosError<{ message: string }>) => {
       console.error('Reset password failed:', error);
-      toast.error('Failed to reset password', {
+      toast.error("Couldn't reset password", {
         description:
           error?.response?.data?.message ||
           'The link may be expired or invalid. Please request a new one.',

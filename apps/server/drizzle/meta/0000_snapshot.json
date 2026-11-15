@@ -1,5 +1,5 @@
 {
-  "id": "e8bb5096-d118-46ca-aab4-b4c17f669cee",
+  "id": "dc7e8c9c-a8e5-4304-888a-d5f0eb1b2864",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -909,14 +909,6 @@
           "primaryKey": false,
           "notNull": true
         },
-        "method": {
-          "name": "method",
-          "type": "http_method",
-          "typeSchema": "public",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'POST'"
-        },
         "last_triggered_at": {
           "name": "last_triggered_at",
           "type": "timestamp with time zone",
@@ -1013,17 +1005,6 @@
         "RUNNING",
         "COMPLETED",
         "FAILED"
-      ]
-    },
-    "public.http_method": {
-      "name": "http_method",
-      "schema": "public",
-      "values": [
-        "GET",
-        "POST",
-        "PUT",
-        "PATCH",
-        "DELETE"
       ]
     },
     "public.step_type": {

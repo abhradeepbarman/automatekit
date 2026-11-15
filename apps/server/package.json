@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "start": "tsc && node dist/index.js",
-    "dev": "cross-env NODE_OPTIONS=--conditions=development tsx watch src/index.ts",
+    "dev": "cross-env NODE_OPTIONS=--conditions=development tsx watch --include \"../../packages/*/src/**\" src/index.ts",
     "build": "tsc",
     "db:generate": "cross-env NODE_OPTIONS=--conditions=development drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate"

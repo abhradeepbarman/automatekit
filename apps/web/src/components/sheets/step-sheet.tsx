@@ -182,7 +182,6 @@ const StepForm = ({
               initial?.eventName === eventName ? initial.config : undefined
             }
             submitLabel={initial ? 'Update' : `Add ${label}`}
-            isLoading={false}
             onSubmit={submit}
           />
         </div>

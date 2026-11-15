@@ -90,16 +90,22 @@ export async function failExecution(
   await finishExecution(executionId, ExecutionStatus.FAILED, message);
 }
 
-export function replaceVariables<T>(fields: T, variables: unknown): T {
-  const lookup: Record<string, any> =
-    variables && typeof variables === 'object'
-      ? (variables as Record<string, any>)
-      : {};
+const resolvePath = (source: unknown, path: string) =>
+  path
+    .split('.')
+    .reduce<unknown>(
+      (value, key) =>
+        value && typeof value === 'object'
+          ? (value as Record<string, unknown>)[key]
+          : undefined,
+      source,
+    );
 
+export function replaceVariables<T>(fields: T, variables: unknown): T {
   const substitute = (value: any): any => {
     if (typeof value === 'string') {
-      return value.replace(/{{(.*?)}}/g, (_match, variableId) => {
-        const resolved = lookup[String(variableId).trim()];
+      return value.replace(/{{(.*?)}}/g, (_match, path: string) => {
+        const resolved = resolvePath(variables, path.trim());
         if (resolved === undefined || resolved === null) return '';
         return typeof resolved === 'object'
           ? JSON.stringify(resolved)

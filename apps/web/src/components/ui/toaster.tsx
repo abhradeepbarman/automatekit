@@ -63,7 +63,7 @@ const Toaster = (props: ToasterProps) => (
           'items-start! gap-3! px-4! py-3.5! backdrop-blur-md! shadow-[0_12px_32px_-8px_rgb(0_0_0/0.45)]!',
         icon: 'mt-px! m-0! size-5!',
         title: 'text-[13px]! font-medium! leading-5! tracking-tight!',
-        description: 'mt-0.5! text-xs! leading-4! text-white/55!',
+        description: 'mt-0.5! text-xs! leading-4! text-white/65!',
         closeButton:
           'bg-neutral-900! border-white/10! text-white/60! hover:text-white!',
       },

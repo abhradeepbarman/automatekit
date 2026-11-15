@@ -13,14 +13,14 @@ export default function Navbar() {
   const { mutate: logout, isPending } = useMutation({
     mutationFn: () => authService.logout(),
     onSuccess: () => {
-      toast.success('Logged out successfully', {
+      toast.success('Signed out', {
         description: 'See you soon!',
       });
       removeUserCredentials();
     },
     onError: (error: any) => {
       console.error('Logout failed:', error);
-      toast.error('Logout failed', {
+      toast.error("Couldn't sign out", {
         description:
           error?.response?.data?.message ||
           'Something went wrong. Please try again.',

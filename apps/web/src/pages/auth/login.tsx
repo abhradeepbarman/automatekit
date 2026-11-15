@@ -47,14 +47,14 @@ export default function Login() {
       authService.login(values.email, values.password),
     onSuccess: (data) => {
       setUserCredentials(data);
-      toast.success('Login successful!', {
+      toast.success('Welcome back', {
         description: 'Redirecting to dashboard...',
       });
       navigate('/dashboard');
     },
     onError: (error: AxiosError<{ message: string }>) => {
       console.error('Login failed:', error);
-      toast.error('Login failed', {
+      toast.error("Couldn't sign in", {
         description:
           error?.response?.data?.message || 'Invalid email or password.',
       });

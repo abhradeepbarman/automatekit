@@ -27,7 +27,6 @@ const getWorkflowDetails = async (id: string) => {
     steps: workflow.steps.map(({ webhook, ...step }) => ({
       ...step,
       webhook: webhook && {
-        method: webhook.method,
         url: `${envConfig.API_URL}/api/v1/webhook/${webhook.path}`,
       },
     })),

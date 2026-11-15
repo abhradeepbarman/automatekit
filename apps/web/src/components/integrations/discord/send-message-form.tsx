@@ -4,7 +4,6 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { sendMessageSchema } from '@repo/integrations/schemas';
-import { LoaderCircle } from 'lucide-react';
 import { Controller, useForm } from 'react-hook-form';
 import type { z } from 'zod';
 import type { EventFormProps } from '../registry';
@@ -13,7 +12,6 @@ type SendMessageValues = z.infer<typeof sendMessageSchema>;
 
 const SendMessageForm = ({
   onSubmit,
-  isLoading,
   submitLabel,
   defaultValues,
 }: EventFormProps) => {
@@ -91,8 +89,8 @@ const SendMessageForm = ({
         )}
       </Field>
 
-      <Button className="mt-8 w-full" type="submit" disabled={isLoading}>
-        {isLoading ? <LoaderCircle className="animate-spin" /> : submitLabel}
+      <Button className="mt-8 w-full" type="submit">
+        {submitLabel}
       </Button>
     </form>
   );

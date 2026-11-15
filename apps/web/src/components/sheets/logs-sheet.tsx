@@ -11,7 +11,7 @@ import { cn, formatDate } from '@/lib/utils';
 import workflowService, { type IExecution } from '@/services/workflow.service';
 import { ExecutionStatus } from '@repo/common/types';
 import { useInfiniteQuery } from '@tanstack/react-query';
-import { LoaderCircle, RefreshCw } from 'lucide-react';
+import { CircleAlert, History, LoaderCircle, RefreshCw } from 'lucide-react';
 import { useParams } from 'react-router-dom';
 
 interface LogsSheetProps {
@@ -68,41 +68,73 @@ const LogsSheet = ({
   });
 
   const executions = data?.pages.flatMap((page) => page.executions) ?? [];
-  const emptyMessage = isLoading
-    ? 'Loading executions…'
+  const total = data?.pages[0]?.pagination.total ?? 0;
+  const emptyState = isLoading
+    ? { icon: LoaderCircle, title: 'Loading runs…', spin: true }
     : isError
-      ? 'Failed to load executions'
+      ? {
+          icon: CircleAlert,
+          title: "Couldn't load runs",
+          hint: 'Check your connection and try again.',
+          retry: true,
+        }
       : executions.length === 0
-        ? 'No runs yet'
+        ? {
+            icon: History,
+            title: 'No runs yet',
+            hint: 'Runs appear here when the trigger fires or you press Run.',
+          }
         : null;
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent className="flex w-full flex-col gap-0 p-0 sm:max-w-md">
-        <SheetHeader className="flex-row items-center justify-between border-b p-5 pr-12">
-          <div>
+        <SheetHeader className="gap-1 border-b px-5 py-4 pr-12">
+          <div className="flex items-center gap-2">
             <SheetTitle>Executions</SheetTitle>
-            <SheetDescription>
-              Select a run to see it on the canvas
-            </SheetDescription>
+            {total > 0 && (
+              <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground tabular-nums">
+                {total}
+              </span>
+            )}
+            <button
+              type="button"
+              title="Refresh"
+              onClick={() => refetch()}
+              className="rounded-md p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            >
+              <RefreshCw
+                className={cn('size-3.5', isFetching && 'animate-spin')}
+              />
+            </button>
           </div>
-          <Button
-            size="icon"
-            variant="outline"
-            title="Refresh"
-            onClick={() => refetch()}
-          >
-            <RefreshCw
-              className={cn('h-4 w-4', isFetching && 'animate-spin')}
-            />
-          </Button>
+          <SheetDescription>
+            Select a run to see it on the canvas
+          </SheetDescription>
         </SheetHeader>
 
         <div className="flex-1 space-y-2 overflow-y-auto p-4">
-          {emptyMessage && (
-            <p className="py-20 text-center text-sm text-muted-foreground">
-              {emptyMessage}
-            </p>
+          {emptyState && (
+            <div className="flex h-full flex-col items-center justify-center gap-3 px-6 pb-16 text-center">
+              <div className="grid size-11 place-items-center rounded-full bg-muted text-muted-foreground">
+                <emptyState.icon
+                  className={cn('size-5', emptyState.spin && 'animate-spin')}
+                />
+              </div>
+              <div className="space-y-1">
+                <p className="text-sm font-medium">{emptyState.title}</p>
+                {emptyState.hint && (
+                  <p className="text-xs text-muted-foreground">
+                    {emptyState.hint}
+                  </p>
+                )}
+              </div>
+              {emptyState.retry && (
+                <Button size="sm" variant="outline" onClick={() => refetch()}>
+                  Retry
+                </Button>
+              )}
+            </div>
           )}
 
           {executions.map((execution) => (

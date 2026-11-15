@@ -1,12 +1,7 @@
 import axios from 'axios';
-import { z } from 'zod';
+import type { z } from 'zod';
 import { type IAction } from '@repo/common/types';
-
-export const sendEmailSchema = z.object({
-  to: z.string().email('Invalid email address'),
-  subject: z.string().min(1, 'Subject is required'),
-  body: z.string().min(1, 'Body is required'),
-});
+import { sendEmailSchema } from '../schemas';
 
 export type SendEmailMetadata = z.infer<typeof sendEmailSchema>;
 

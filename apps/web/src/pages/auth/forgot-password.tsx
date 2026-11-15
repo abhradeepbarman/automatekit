@@ -47,7 +47,7 @@ export default function ForgotPassword() {
     onSuccess: (_, values) => setSubmittedEmail(values.email),
     onError: (error: AxiosError<{ message: string }>) => {
       console.error('Forgot password failed:', error);
-      toast.error('Failed to send email', {
+      toast.error("Couldn't send reset email", {
         description:
           error?.response?.data?.message ||
           'Something went wrong. Please try again.',

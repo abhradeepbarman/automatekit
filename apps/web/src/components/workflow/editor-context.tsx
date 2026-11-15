@@ -7,7 +7,7 @@ export interface StepData extends Record<string, unknown> {
   eventName: string;
   connectionId: string | null;
   config: Record<string, unknown>;
-  webhook?: { method: string; url: string } | null;
+  webhook?: { url: string } | null;
 }
 
 interface EditorContextValue {

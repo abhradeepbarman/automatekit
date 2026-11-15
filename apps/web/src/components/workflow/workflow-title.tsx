@@ -36,11 +36,11 @@ export default function WorkflowTitle({
       setIsEditing(false);
       queryClient.invalidateQueries({ queryKey: ['workflow', workflowId] });
       queryClient.invalidateQueries({ queryKey: ['workflows'] });
-      toast.success('Workflow renamed successfully');
+      toast.success('Workflow renamed');
     },
     onError: (error: AxiosError<{ message: string }>) => {
       console.error('Rename workflow failed:', error);
-      toast.error('Rename failed', {
+      toast.error("Couldn't rename workflow", {
         description:
           error?.response?.data?.message ||
           'Unable to rename workflow. Please try again.',

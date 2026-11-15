@@ -20,7 +20,7 @@ export interface IStep {
   connectionId: string | null;
   config: Record<string, unknown>;
   position: { x: number; y: number };
-  webhook: { method: string; url: string } | null;
+  webhook: { url: string } | null;
 }
 
 export interface IEdge {

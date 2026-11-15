@@ -1,9 +1,6 @@
-import { z } from 'zod';
+import type { z } from 'zod';
 import { type ITrigger, SystemEvent } from '@repo/common/types';
-
-export const timerSchema = z.object({
-  intervalMs: z.string().min(1, 'Interval is required'),
-});
+import { timerSchema } from '../schemas';
 
 export const timer: ITrigger<z.infer<typeof timerSchema>> = {
   id: SystemEvent.TIMER,

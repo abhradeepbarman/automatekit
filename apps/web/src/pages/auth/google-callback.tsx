@@ -20,7 +20,7 @@ const GoogleCallback = () => {
         navigate('/dashboard', { replace: true });
       } catch (error) {
         console.error('Google sign-in failed:', error);
-        toast.error('Google sign-in failed', {
+        toast.error("Couldn't sign in with Google", {
           description: 'Please try signing in again.',
         });
         navigate('/login', { replace: true });

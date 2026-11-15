@@ -61,7 +61,7 @@ const Dashboard = () => {
     onSuccess: (data) => navigate(`/workflow/${data.id}`),
     onError: (error: AxiosError<{ message: string }>) => {
       console.error('Create workflow failed:', error);
-      toast.error('Create workflow failed', {
+      toast.error("Couldn't create workflow", {
         description:
           error?.response?.data?.message ||
           'Unable to create workflow. Please try again.',
@@ -359,17 +359,17 @@ const WorkflowItem = ({
         workflowService.updateWorkflow(id, undefined, newIsActive),
       onSuccess: (_, newIsActive) => {
         queryClient.invalidateQueries({ queryKey: ['workflows'] });
-        toast.success(
-          `Workflow ${newIsActive ? 'activated' : 'paused'} successfully`,
-        );
+        toast.success(newIsActive ? 'Workflow is live' : 'Workflow paused');
       },
-      onError: (error: AxiosError<{ message: string }>) => {
-        console.error('Toggle status failed:', error);
-        toast.error('Status update failed', {
-          description:
-            error?.response?.data?.message ||
-            'Unable to update workflow status. Please try again.',
-        });
+      onError: (error: AxiosError<{ message: string }>, newIsActive) => {
+        toast.error(
+          newIsActive
+            ? "Couldn't activate workflow"
+            : "Couldn't pause workflow",
+          {
+            description: error?.response?.data?.message || 'Please try again.',
+          },
+        );
       },
     });
 
@@ -378,12 +378,12 @@ const WorkflowItem = ({
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['workflows'] });
       queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
-      toast.success('Workflow deleted successfully');
+      toast.success('Workflow deleted');
       setShowDeleteDialog(false);
     },
     onError: (error: AxiosError<{ message: string }>) => {
       console.error('Delete workflow failed:', error);
-      toast.error('Delete failed', {
+      toast.error("Couldn't delete workflow", {
         description:
           error?.response?.data?.message ||
           'Unable to delete workflow. Please try again.',

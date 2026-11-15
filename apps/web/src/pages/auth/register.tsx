@@ -53,14 +53,14 @@ export default function Register() {
       ),
     onSuccess: (data) => {
       setUserCredentials(data);
-      toast.success('Account created successfully!', {
+      toast.success('Account created', {
         description: 'Redirecting to dashboard...',
       });
       navigate('/dashboard');
     },
     onError: (error: AxiosError<{ message: string }>) => {
       console.error('Registration failed:', error);
-      toast.error('Registration failed', {
+      toast.error("Couldn't create account", {
         description:
           error?.response?.data?.message ||
           'Unable to create account. Please try again.',

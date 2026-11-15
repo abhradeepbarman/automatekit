@@ -37,7 +37,6 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { toast } from 'sonner';
 
 type StepNodeType = Node<StepData, 'step'>;
-
 const nodeTypes = { step: StepNode };
 
 const toGraph = (workflow: IWorkflowDetails) => ({
@@ -121,7 +120,7 @@ export default function Workflow() {
       queryClient.invalidateQueries({ queryKey: ['workflows'] });
       toast.success('Workflow saved');
     },
-    onError: showError('Could not save workflow'),
+    onError: showError("Couldn't save workflow"),
   });
 
   const { mutate: toggleActive, isPending: isToggling } = useMutation({
@@ -130,9 +129,16 @@ export default function Workflow() {
     onSuccess: (_, isActive) => {
       queryClient.invalidateQueries({ queryKey: ['workflow', workflowId] });
       queryClient.invalidateQueries({ queryKey: ['workflows'] });
-      toast.success(`Workflow ${isActive ? 'activated' : 'paused'}`);
+      toast.success(isActive ? 'Workflow is live' : 'Workflow paused', {
+        description: isActive
+          ? 'It will run whenever its trigger fires.'
+          : 'It will not run until you activate it again.',
+      });
     },
-    onError: showError('Status update failed'),
+    onError: (error: AxiosError<{ message: string }>, isActive) =>
+      showError(
+        isActive ? "Couldn't activate workflow" : "Couldn't pause workflow",
+      )(error),
   });
 
   const onNodesChange = useCallback((changes: NodeChange<StepNodeType>[]) => {
@@ -231,6 +237,14 @@ export default function Workflow() {
     sheet?.mode === 'add-action'
       ? sheet.sourceId
       : editing && edges.find((e) => e.target === editing.id)?.source;
+  const canActivate = workflow ? workflow.steps.length >= 2 : false;
+  const switchHint = isDirty
+    ? 'Save your changes first'
+    : workflow?.isActive
+      ? 'Pause workflow'
+      : canActivate
+        ? 'Activate workflow'
+        : 'Add a trigger and at least one action to activate';
   const hasTrigger = nodes.some((node) => node.data.type === StepType.TRIGGER);
 
   if (isLoading || !workflow) {
@@ -257,17 +271,16 @@ export default function Workflow() {
         <div className="absolute top-4 left-1/2 z-10 flex max-w-md -translate-x-1/2 items-center gap-2 rounded-md border bg-background/80 p-1 pr-3 backdrop-blur-sm">
           <WorkflowTitle workflowId={workflow.id} name={workflow.name} />
           <span className="h-5 w-px shrink-0 bg-border" />
-          <Switch
-            title={
-              workflow.isActive ? 'Deactivate workflow' : 'Activate workflow'
-            }
-            aria-label={
-              workflow.isActive ? 'Deactivate workflow' : 'Activate workflow'
-            }
-            checked={workflow.isActive}
-            onCheckedChange={toggleActive}
-            disabled={isToggling || isDirty}
-          />
+          <span title={switchHint}>
+            <Switch
+              aria-label={switchHint}
+              checked={workflow.isActive}
+              onCheckedChange={toggleActive}
+              disabled={
+                isToggling || isDirty || (!workflow.isActive && !canActivate)
+              }
+            />
+          </span>
         </div>
 
         <div className="absolute top-4 right-4 z-10 flex items-center gap-2">

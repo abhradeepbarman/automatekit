@@ -12,9 +12,6 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
-      // Consume the integration schemas from TypeScript source so Rollup can
-      // tree-shake away each event's server-only `run`/axios logic (the
-      // compiled CommonJS dist cannot be tree-shaken and would leak it).
       '@repo/integrations/schemas': path.resolve(
         __dirname,
         '../../packages/integrations/src/schemas.ts',

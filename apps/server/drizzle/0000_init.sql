@@ -1,6 +1,5 @@
 CREATE TYPE "public"."auth_provider" AS ENUM('local', 'google');--> statement-breakpoint
 CREATE TYPE "public"."execution_status" AS ENUM('PENDING', 'RUNNING', 'COMPLETED', 'FAILED');--> statement-breakpoint
-CREATE TYPE "public"."http_method" AS ENUM('GET', 'POST', 'PUT', 'PATCH', 'DELETE');--> statement-breakpoint
 CREATE TYPE "public"."step_type" AS ENUM('TRIGGER', 'ACTION');--> statement-breakpoint
 CREATE TABLE "connections" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
@@ -104,7 +103,6 @@ CREATE TABLE "webhooks" (
 	"workflow_id" uuid NOT NULL,
 	"step_id" uuid NOT NULL,
 	"path" varchar NOT NULL,
-	"method" "http_method" DEFAULT 'POST' NOT NULL,
 	"last_triggered_at" timestamp with time zone,
 	"trigger_count" integer DEFAULT 0 NOT NULL,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,

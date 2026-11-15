@@ -62,7 +62,9 @@ const ConnectBtn = ({
       }
     } catch (error) {
       console.error(error);
-      toast.error('Something went wrong');
+      toast.error("Couldn't open sign-in", {
+        description: 'Please try again.',
+      });
     }
   };
 
@@ -95,7 +97,7 @@ const ConnectBtn = ({
       try {
         const { data } = await getToken();
         if (data) {
-          toast.success('Successfully connected!');
+          toast.success('Account connected');
           refetchConnections();
 
           if (onAuthSuccess) {
@@ -104,7 +106,9 @@ const ConnectBtn = ({
         }
       } catch (error) {
         console.error(error);
-        toast.error('Failed to get access token');
+        toast.error("Couldn't connect account", {
+          description: 'Please try connecting again.',
+        });
       }
     };
 

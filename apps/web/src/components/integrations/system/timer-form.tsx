@@ -10,7 +10,6 @@ import {
 import { PollingInterval } from '@repo/common/types';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { timerSchema } from '@repo/integrations/schemas';
-import { LoaderCircle } from 'lucide-react';
 import { Controller, useForm } from 'react-hook-form';
 import type { z } from 'zod';
 import type { EventFormProps } from '../registry';
@@ -19,7 +18,6 @@ type TimerValues = z.infer<typeof timerSchema>;
 
 const TimerForm = ({
   onSubmit,
-  isLoading,
   submitLabel,
   defaultValues,
 }: EventFormProps) => {
@@ -63,8 +61,8 @@ const TimerForm = ({
         )}
       />
 
-      <Button className="mt-8 w-full" type="submit" disabled={isLoading}>
-        {isLoading ? <LoaderCircle className="animate-spin" /> : submitLabel}
+      <Button className="mt-8 w-full" type="submit">
+        {submitLabel}
       </Button>
     </form>
   );
