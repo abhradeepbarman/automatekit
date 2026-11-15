@@ -18,7 +18,6 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
 import {
   Pagination,
   PaginationContent,
@@ -36,13 +35,11 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { AxiosError } from 'axios';
 import {
   Activity,
-  Check,
   CircleAlert,
   Pencil,
   Plus,
   Trash2,
   Workflow as WorkflowIcon,
-  X,
   type LucideIcon,
 } from 'lucide-react';
 import { Fragment, useEffect, useState } from 'react';
@@ -353,30 +350,8 @@ const WorkflowItem = ({
   createdAt: string;
   onOpen: () => void;
 }) => {
-  const [isEditing, setIsEditing] = useState(false);
-  const [editedName, setEditedName] = useState(name);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const queryClient = useQueryClient();
-
-  const { mutate: updateWorkflowName, isPending: isRenamePending } =
-    useMutation({
-      mutationFn: (newName: string) =>
-        workflowService.updateWorkflow(id, newName),
-      onSuccess: () => {
-        setIsEditing(false);
-        queryClient.invalidateQueries({ queryKey: ['workflows'] });
-        toast.success('Workflow renamed successfully');
-      },
-      onError: (error: AxiosError<{ message: string }>) => {
-        console.error('Rename workflow failed:', error);
-        toast.error('Rename failed', {
-          description:
-            error?.response?.data?.message ||
-            'Unable to rename workflow. Please try again.',
-        });
-        setEditedName(name);
-      },
-    });
 
   const { mutate: toggleWorkflowStatus, isPending: isStatusPending } =
     useMutation({
@@ -416,28 +391,6 @@ const WorkflowItem = ({
     },
   });
 
-  const handleSave = () => {
-    if (editedName.trim() && editedName !== name) {
-      updateWorkflowName(editedName.trim());
-    } else {
-      setIsEditing(false);
-      setEditedName(name);
-    }
-  };
-
-  const handleCancel = () => {
-    setIsEditing(false);
-    setEditedName(name);
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      handleSave();
-    } else if (e.key === 'Escape') {
-      handleCancel();
-    }
-  };
-
   return (
     <div className="group flex items-center justify-between gap-3 rounded-xl px-3 py-3.5 transition-colors hover:bg-muted/60">
       <div className="flex min-w-0 flex-1 items-center gap-3">
@@ -453,52 +406,12 @@ const WorkflowItem = ({
         </span>
 
         <div className="min-w-0 flex-1">
-          {isEditing ? (
-            <div className="flex items-center gap-2">
-              <Input
-                value={editedName}
-                onChange={(e) => setEditedName(e.target.value)}
-                onKeyDown={handleKeyDown}
-                className="h-8 max-w-xs"
-                autoFocus
-                disabled={isRenamePending}
-              />
-              <Button
-                size="sm"
-                variant="ghost"
-                className="h-8 w-8 shrink-0 p-0"
-                onClick={handleSave}
-                disabled={isRenamePending}
-              >
-                <Check className="h-4 w-4 text-emerald-600" />
-              </Button>
-              <Button
-                size="sm"
-                variant="ghost"
-                className="h-8 w-8 shrink-0 p-0"
-                onClick={handleCancel}
-                disabled={isRenamePending}
-              >
-                <X className="h-4 w-4 text-destructive" />
-              </Button>
-            </div>
-          ) : (
-            <>
-              <button
-                type="button"
-                className="mb-1 block max-w-full cursor-text truncate text-left font-medium hover:underline hover:decoration-dotted hover:underline-offset-4"
-                title="Rename workflow"
-                onClick={() => setIsEditing(true)}
-              >
-                {name}
-              </button>
-              <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                <span>Created {formatDate(createdAt)}</span>
-                <span className="size-0.5 rounded-full bg-muted-foreground/40" />
-                <span>Last run: {lastRun}</span>
-              </div>
-            </>
-          )}
+          <p className="mb-1 truncate font-medium">{name}</p>
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <span>Created {formatDate(createdAt)}</span>
+            <span className="size-0.5 rounded-full bg-muted-foreground/40" />
+            <span>Last run: {lastRun}</span>
+          </div>
         </div>
       </div>
 

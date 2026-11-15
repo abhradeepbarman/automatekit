@@ -4,6 +4,7 @@ import AddActionButtonNode from '@/components/nodes/add-action-button-node';
 import AddTriggerButtonNode from '@/components/nodes/add-trigger-button-node';
 import TriggerNode from '@/components/nodes/trigger-node';
 import ActionSheet from '@/components/sheets/action-sheet';
+import WorkflowTitle from '@/components/workflow/workflow-title';
 import LogsSheet from '@/components/sheets/logs-sheet';
 import TriggerSheet from '@/components/sheets/trigger-sheet';
 import { Button } from '@/components/ui/button';
@@ -231,6 +232,12 @@ export default function Workflow() {
           <ArrowLeft className="h-4 w-4" />
         </Button>
       </div>
+
+      {data && (
+        <div className="absolute top-4 left-1/2 z-10 -translate-x-1/2">
+          <WorkflowTitle workflowId={data.id} name={data.name} />
+        </div>
+      )}
 
       <div className="absolute top-4 right-4 z-10 flex items-center gap-4">
         {data && (
