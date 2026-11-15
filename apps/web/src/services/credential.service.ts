@@ -6,7 +6,8 @@ interface IGetAuthUrlResponse {
 
 interface IGetTokenResponse {
   id: string;
-  app: string;
+  integration: string;
+  name: string;
 }
 
 class CredentialService {

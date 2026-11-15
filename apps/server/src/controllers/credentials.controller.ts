@@ -4,7 +4,8 @@ import { NextFunction, Request, Response } from 'express';
 import { asyncHandler, CustomErrorHandler, ResponseHandler } from '../utils';
 import db from '@repo/db';
 import { connections } from '@repo/db/schema';
-import { encryptSymmetric } from '@repo/common/utils';
+import type { ConnectionCredentials } from '@repo/common/types';
+import { encryptJson } from '@repo/common/utils';
 import { envConfig } from '../config/env';
 
 export const getAuthUrl = asyncHandler(
@@ -71,14 +72,14 @@ export const getConnections = asyncHandler(
       .select({
         id: connections.id,
         name: connections.name,
-        app: connections.app,
+        integration: connections.integration,
         createdAt: connections.createdAt,
       })
       .from(connections)
       .where(
         and(
           eq(connections.userId, req.user.id),
-          eq(connections.app, provider as string),
+          eq(connections.integration, provider as string),
         ),
       );
 
@@ -123,37 +124,23 @@ export const getTokenUrl = asyncHandler(
     }
 
     const { email, name } = await appDetails.auth.getUserInfo(access_token);
-    const {
-      ciphertext: accessCiphertext,
-      iv: accessIv,
-      tag: accessTag,
-    } = encryptSymmetric(access_token);
-    const {
-      ciphertext: refreshCiphertext,
-      iv: refreshIv,
-      tag: refreshTag,
-    } = encryptSymmetric(refresh_token ?? '');
+    const credentials: ConnectionCredentials = {
+      accessToken: access_token,
+      refreshToken: refresh_token,
+    };
 
-    const [credentials] = await db
+    const [connection] = await db
       .insert(connections)
       .values({
-        app: appDetails.id,
-        name: name ? `${name}(${email})` : email,
-
-        accessTokenEncrypt: accessCiphertext,
-        accessTokenIV: accessIv,
-        accessTokenTag: accessTag,
-
-        refreshTokenEncrypt: refreshCiphertext,
-        refreshTokenIV: refreshIv,
-        refreshTokenTag: refreshTag,
-
-        expiresAt: new Date(Date.now() + expires_in * 1000),
         userId: req.user.id,
+        integration: appDetails.id,
+        name: name ? `${name}(${email})` : email,
+        credentials: encryptJson(credentials),
+        expiresAt: expires_in ? new Date(Date.now() + expires_in * 1000) : null,
       })
       .returning();
 
-    if (!credentials) {
+    if (!connection) {
       return next(
         CustomErrorHandler.badRequest('Failed to create credentials'),
       );
@@ -161,9 +148,9 @@ export const getTokenUrl = asyncHandler(
 
     return res.status(200).send(
       ResponseHandler(200, 'Credentials fetched successfully', {
-        id: credentials.id,
-        app: credentials.app,
-        name: credentials.name,
+        id: connection.id,
+        integration: connection.integration,
+        name: connection.name,
       }),
     );
   },

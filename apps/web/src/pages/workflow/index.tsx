@@ -56,15 +56,16 @@ export default function Workflow() {
   const { mutate: updateStep } = useMutation({
     mutationFn: ({
       stepId,
-      app,
+      integration,
       connectionId,
       metadata,
     }: {
       stepId: string;
-      app?: string;
+      integration?: string;
       connectionId?: string;
       metadata?: any;
-    }) => stepService.updateStep({ stepId, app, connectionId, metadata }),
+    }) =>
+      stepService.updateStep({ stepId, integration, connectionId, metadata }),
   });
 
   const { mutate: toggleWorkflowStatus, isPending: isStatusPending } =
@@ -211,7 +212,9 @@ export default function Workflow() {
       (step) => step.id === selectedSourceNodeId,
     );
     if (!stepDetails) return undefined;
-    const appDetails = integrations?.find((app) => app.id === stepDetails.app);
+    const appDetails = integrations?.find(
+      (app) => app.id === stepDetails.integration,
+    );
     if (stepDetails.type === StepType.TRIGGER) {
       return appDetails?.triggers.find((t) => t.id === stepDetails.eventName)
         ?.dataAvailable;

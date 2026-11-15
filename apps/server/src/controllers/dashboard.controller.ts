@@ -1,5 +1,5 @@
 import db from '@repo/db';
-import { executionLogs, workflows } from '@repo/db/schema';
+import { executions, workflows } from '@repo/db/schema';
 import { and, eq, gt, sql } from 'drizzle-orm';
 import { NextFunction, Request, Response } from 'express';
 import { asyncHandler, ResponseHandler } from '../utils';
@@ -17,24 +17,24 @@ export const getDashboardStats = asyncHandler(
 
     const [runsCount] = await db
       .select({ count: sql<number>`count(*)` })
-      .from(executionLogs)
-      .innerJoin(workflows, eq(executionLogs.workflowId, workflows.id))
+      .from(executions)
+      .innerJoin(workflows, eq(executions.workflowId, workflows.id))
       .where(
         and(
           eq(workflows.userId, userId),
-          gt(executionLogs.createdAt, thirtyDaysAgo),
+          gt(executions.startedAt, thirtyDaysAgo),
         ),
       );
 
     const [errorsCount] = await db
       .select({ count: sql<number>`count(*)` })
-      .from(executionLogs)
-      .innerJoin(workflows, eq(executionLogs.workflowId, workflows.id))
+      .from(executions)
+      .innerJoin(workflows, eq(executions.workflowId, workflows.id))
       .where(
         and(
           eq(workflows.userId, userId),
-          gt(executionLogs.createdAt, thirtyDaysAgo),
-          eq(executionLogs.status, ExecutionStatus.FAILED),
+          gt(executions.startedAt, thirtyDaysAgo),
+          eq(executions.status, ExecutionStatus.FAILED),
         ),
       );
 

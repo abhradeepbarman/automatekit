@@ -6,7 +6,7 @@ import {
   resetPasswordSchema,
 } from '@repo/common/validators';
 import db from '@repo/db';
-import { passwordTokens, users } from '@repo/db/schema';
+import { passwordResetTokens, users } from '@repo/db/schema';
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
 import { eq } from 'drizzle-orm';
@@ -37,7 +37,7 @@ const issueSession = async (res: Response, userId: string) => {
 
   await db
     .update(users)
-    .set({ refreshToken: hashToken(refreshToken) })
+    .set({ refreshTokenHash: hashToken(refreshToken) })
     .where(eq(users.id, userId));
 
   return accessToken;
@@ -62,7 +62,7 @@ export const userRegister = asyncHandler(
       .values({
         name,
         email,
-        password: hashedPassword,
+        passwordHash: hashedPassword,
         authProvider: AuthProvider.LOCAL,
       })
       .returning();
@@ -94,14 +94,14 @@ export const userLogin = asyncHandler(
     if (
       !existingUser ||
       existingUser.authProvider !== AuthProvider.LOCAL ||
-      !existingUser.password
+      !existingUser.passwordHash
     ) {
       return next(CustomErrorHandler.wrongCredentials());
     }
 
     const isPasswordValid = await bcrypt.compare(
       password,
-      existingUser.password,
+      existingUser.passwordHash,
     );
     if (!isPasswordValid) {
       return next(CustomErrorHandler.wrongCredentials());
@@ -123,7 +123,7 @@ export const userLogin = asyncHandler(
 export const userLogout = asyncHandler(async (req: Request, res: Response) => {
   const [data] = await db
     .update(users)
-    .set({ refreshToken: null })
+    .set({ refreshTokenHash: null })
     .where(eq(users.id, req.user.id))
     .returning({ id: users.id, name: users.name });
 
@@ -152,8 +152,8 @@ export const refreshAccessToken = asyncHandler(
 
     if (
       !userDetails ||
-      !userDetails.refreshToken ||
-      userDetails.refreshToken !== hashToken(token)
+      !userDetails.refreshTokenHash ||
+      userDetails.refreshTokenHash !== hashToken(token)
     ) {
       return next(CustomErrorHandler.unAuthorized());
     }
@@ -195,9 +195,9 @@ export const sendForgotPasswordEmail = asyncHandler(
 
     const rawToken = crypto.randomBytes(32).toString('hex');
 
-    await db.insert(passwordTokens).values({
+    await db.insert(passwordResetTokens).values({
       userId: existingUser.id,
-      token: hashToken(rawToken),
+      tokenHash: hashToken(rawToken),
       expiresAt: new Date(Date.now() + 60 * 60 * 1000),
     });
 
@@ -218,8 +218,8 @@ export const resetPassword = asyncHandler(
       return next(CustomErrorHandler.badRequest('Token is invalid'));
     }
 
-    const existingToken = await db.query.passwordTokens.findFirst({
-      where: eq(passwordTokens.token, hashToken(token as string)),
+    const existingToken = await db.query.passwordResetTokens.findFirst({
+      where: eq(passwordResetTokens.tokenHash, hashToken(token as string)),
     });
 
     if (!existingToken) {
@@ -236,13 +236,13 @@ export const resetPassword = asyncHandler(
 
     await db
       .update(users)
-      .set({ password: hashedPassword, refreshToken: null })
+      .set({ passwordHash: hashedPassword, refreshTokenHash: null })
       .where(eq(users.id, existingToken.userId));
 
     await db
-      .update(passwordTokens)
+      .update(passwordResetTokens)
       .set({ usedAt: new Date() })
-      .where(eq(passwordTokens.id, existingToken.id));
+      .where(eq(passwordResetTokens.id, existingToken.id));
 
     return res
       .status(200)
@@ -252,7 +252,10 @@ export const resetPassword = asyncHandler(
 
 export const googleLogin = asyncHandler(
   async (_req: Request, res: Response, next: NextFunction) => {
-    if (!envConfig.GOOGLE_AUTH_CLIENT_ID || !envConfig.GOOGLE_AUTH_CLIENT_SECRET) {
+    if (
+      !envConfig.GOOGLE_AUTH_CLIENT_ID ||
+      !envConfig.GOOGLE_AUTH_CLIENT_SECRET
+    ) {
       return next(
         CustomErrorHandler.serverError('Google login is not configured'),
       );
@@ -273,7 +276,10 @@ export const googleLogin = asyncHandler(
 
     const authUrl = new URL(GOOGLE_AUTH_URL);
     authUrl.searchParams.set('client_id', envConfig.GOOGLE_AUTH_CLIENT_ID);
-    authUrl.searchParams.set('redirect_uri', envConfig.GOOGLE_AUTH_REDIRECT_URI);
+    authUrl.searchParams.set(
+      'redirect_uri',
+      envConfig.GOOGLE_AUTH_REDIRECT_URI,
+    );
     authUrl.searchParams.set('response_type', 'code');
     authUrl.searchParams.set('scope', 'openid email profile');
     authUrl.searchParams.set('state', state);

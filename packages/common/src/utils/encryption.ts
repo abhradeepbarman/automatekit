@@ -1,7 +1,7 @@
 import crypto from 'crypto';
 import 'dotenv/config';
 
-type EncryptedData = {
+export type EncryptedData = {
   ciphertext: string;
   iv: string;
   tag: string;
@@ -64,3 +64,9 @@ export const decryptSymmetric = (
 
   return plaintext;
 };
+
+export const encryptJson = (value: unknown): EncryptedData =>
+  encryptSymmetric(JSON.stringify(value));
+
+export const decryptJson = <T>({ ciphertext, iv, tag }: EncryptedData): T =>
+  JSON.parse(decryptSymmetric(ciphertext, iv, tag)) as T;

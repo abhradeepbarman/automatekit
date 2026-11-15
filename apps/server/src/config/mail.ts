@@ -37,7 +37,12 @@ export type SendEmailOptions = {
   subject: string;
 } & EmailContent;
 
-export const sendEmail = async ({ to, subject, html, text }: SendEmailOptions) => {
+export const sendEmail = async ({
+  to,
+  subject,
+  html,
+  text,
+}: SendEmailOptions) => {
   const client = getResendClient();
 
   let result: Awaited<ReturnType<typeof client.emails.send>>;

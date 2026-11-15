@@ -6,7 +6,7 @@ import { validate } from 'uuid';
 class StepService {
   async addStep(
     workflowId: string,
-    app: string,
+    integration: string,
     eventName: string,
     index: number,
     type: StepType,
@@ -14,7 +14,7 @@ class StepService {
     metadata: any,
   ): Promise<IStep> {
     const { data } = await axiosInstance.post(`/step/workflow/${workflowId}`, {
-      app,
+      integration,
       index,
       type,
       connectionId,
@@ -37,18 +37,18 @@ class StepService {
 
   async updateStep({
     stepId,
-    app,
+    integration,
     connectionId,
     metadata,
   }: {
     stepId: string;
-    app?: string;
+    integration?: string;
     connectionId?: string;
     metadata?: any;
   }) {
     if (!validate(stepId)) return;
     const { data } = await axiosInstance.put(`/step/${stepId}`, {
-      app,
+      integration,
       connectionId,
       metadata,
     });

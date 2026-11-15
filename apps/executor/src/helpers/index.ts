@@ -1,45 +1,93 @@
 import { ExecutionStatus, StepType } from '@repo/common/types';
-import { logger } from '@repo/common/utils';
 import db from '@repo/db';
-import { executionLogs } from '@repo/db/schema';
+import { executionSteps, executions, workflows } from '@repo/db/schema';
+import { eq } from 'drizzle-orm';
 
-export async function createExecutionLog(
+interface StepInfo {
+  id: string;
+  index: number;
+  type: StepType;
+  integration: string;
+  eventName: string;
+}
+
+export async function createExecution(
   workflowId: string,
-  app: string,
-  stepId: string | null,
-  eventName: string,
-  stepType: StepType,
-  message: string,
-  jobId: string,
-  status: ExecutionStatus = ExecutionStatus.PENDING,
+  triggerData: unknown,
 ): Promise<string> {
-  try {
-    if (!workflowId || !jobId || message === undefined || message === null) {
-      logger.warn('Invalid parameters passed to createExecutionLog');
-      return '';
-    }
+  const [execution] = await db
+    .insert(executions)
+    .values({ workflowId, status: ExecutionStatus.RUNNING, triggerData })
+    .returning({ id: executions.id });
 
-    const [newLog] = await db
-      .insert(executionLogs)
-      .values({
-        workflowId,
-        app,
-        stepId,
-        eventName,
-        stepType,
-        message,
-        jobId,
-        status,
-      })
-      .returning();
+  if (!execution) throw new Error('Failed to create execution');
 
-    if (!newLog) return '';
+  await db
+    .update(workflows)
+    .set({ lastExecutedAt: new Date() })
+    .where(eq(workflows.id, workflowId));
 
-    return newLog.id;
-  } catch (error) {
-    logger.error('Create execution log error: ' + error);
-    return '';
-  }
+  return execution.id;
+}
+
+export async function finishExecution(
+  executionId: string,
+  status: ExecutionStatus.COMPLETED | ExecutionStatus.FAILED,
+  error?: string,
+) {
+  await db
+    .update(executions)
+    .set({ status, error, finishedAt: new Date() })
+    .where(eq(executions.id, executionId));
+}
+
+export async function startExecutionStep(
+  executionId: string,
+  step: StepInfo,
+  input?: unknown,
+): Promise<string> {
+  const [executionStep] = await db
+    .insert(executionSteps)
+    .values({
+      executionId,
+      stepId: step.id,
+      stepIndex: step.index,
+      stepType: step.type,
+      integration: step.integration,
+      eventName: step.eventName,
+      status: ExecutionStatus.RUNNING,
+      input,
+    })
+    .returning({ id: executionSteps.id });
+
+  if (!executionStep) throw new Error('Failed to create execution step');
+  return executionStep.id;
+}
+
+export async function finishExecutionStep(
+  executionStepId: string,
+  result: {
+    status: ExecutionStatus.COMPLETED | ExecutionStatus.FAILED;
+    message?: string;
+    output?: unknown;
+  },
+) {
+  await db
+    .update(executionSteps)
+    .set({ ...result, finishedAt: new Date() })
+    .where(eq(executionSteps.id, executionStepId));
+}
+
+export async function failExecution(
+  executionId: string,
+  executionStepId: string,
+  message: string,
+) {
+  await finishExecutionStep(executionStepId, {
+    status: ExecutionStatus.FAILED,
+    message,
+  });
+  await finishExecution(executionId, ExecutionStatus.FAILED, message);
 }
 
 export function replaceVariables<T>(fields: T, variables: unknown): T {

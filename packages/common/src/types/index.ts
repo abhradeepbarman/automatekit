@@ -10,6 +10,14 @@ export interface ReturnResponse<T = any | null> {
   skipped?: boolean;
 }
 
+export enum HttpMethod {
+  GET = 'GET',
+  POST = 'POST',
+  PUT = 'PUT',
+  PATCH = 'PATCH',
+  DELETE = 'DELETE',
+}
+
 export enum ExecutionStatus {
   PENDING = 'PENDING',
   RUNNING = 'RUNNING',
@@ -43,6 +51,13 @@ export enum AppType {
 export enum SystemEvent {
   TIMER = 'timer',
   WEBHOOK = 'webhook',
+}
+
+export interface ConnectionCredentials {
+  accessToken?: string;
+  refreshToken?: string;
+  apiKey?: string;
+  [key: string]: unknown;
 }
 
 export interface TokenResponse {

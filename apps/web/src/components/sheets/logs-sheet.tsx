@@ -1,5 +1,6 @@
 import workflowService, {
-  type IExecutionLog,
+  type IExecution,
+  type IExecutionStep,
 } from '@/services/workflow.service';
 import { useIntegrations } from '@/hooks/use-integrations';
 import { ExecutionStatus, StepType } from '@repo/common/types';
@@ -77,9 +78,9 @@ const LogsSheet = ({ open, onOpenChange }: ILogsSheetProps) => {
     isFetching,
     refetch,
   } = useInfiniteQuery({
-    queryKey: ['execution-logs', workflowId],
+    queryKey: ['executions', workflowId],
     queryFn: ({ pageParam = 1 }) =>
-      workflowService.getExecutionLogs(workflowId!, 20, pageParam),
+      workflowService.getExecutions(workflowId!, pageParam),
     getNextPageParam: (lastPage, allPages) => {
       return lastPage.pagination.hasMore ? allPages.length + 1 : undefined;
     },
@@ -122,7 +123,7 @@ const LogsSheet = ({ open, onOpenChange }: ILogsSheetProps) => {
     return null;
   };
 
-  const allLogs = data?.pages.flatMap((page) => page.executionLogs) || [];
+  const executions = data?.pages.flatMap((page) => page.executions) || [];
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -181,7 +182,7 @@ const LogsSheet = ({ open, onOpenChange }: ILogsSheetProps) => {
                 </p>
               </div>
             </div>
-          ) : allLogs.length === 0 ? (
+          ) : executions.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full gap-3 py-20">
               <div className="flex items-center justify-center h-12 w-12 rounded-full bg-muted">
                 <Clock className="h-6 w-6 text-muted-foreground" />
@@ -195,90 +196,73 @@ const LogsSheet = ({ open, onOpenChange }: ILogsSheetProps) => {
             </div>
           ) : (
             <div className="py-3 px-4 space-y-2">
-              {allLogs.map((log: IExecutionLog, index: number) => {
-                const app = getAppDetails(log.app);
-                const step = getStepDetails(
-                  log.eventName,
-                  log.app,
-                  log.stepType,
-                );
-                const status = statusConfig[log.status] ?? {
-                  icon: <Clock className="h-3.5 w-3.5" />,
-                  label: log.status,
-                  classes: 'bg-muted text-muted-foreground border-border',
-                  dot: 'bg-muted-foreground',
-                };
+              {executions.map((execution: IExecution) => (
+                <div
+                  key={execution.id}
+                  className="rounded-xl border bg-card p-3.5"
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-[11px] text-muted-foreground">
+                      {formatDate(execution.startedAt)}
+                    </span>
+                    <StatusBadge status={execution.status} />
+                  </div>
 
-                return (
-                  <div
-                    key={`${log.id}-${index}`}
-                    className="group relative rounded-xl border bg-card hover:bg-accent/30 transition-colors duration-150 p-3.5"
-                  >
-                    <div className="flex items-start gap-3">
-                      {/* App icon */}
-                      <div className="shrink-0 mt-0.5">
-                        {app?.icon ? (
-                          <img
-                            src={app.icon}
-                            alt={app.name}
-                            className="h-8 w-8 object-contain rounded-md"
-                          />
-                        ) : (
-                          <div className="h-8 w-8 rounded-md bg-muted flex items-center justify-center">
-                            <span className="text-[11px] font-semibold text-muted-foreground">
-                              {log.app.substring(0, 2).toUpperCase()}
-                            </span>
-                          </div>
-                        )}
-                      </div>
+                  {execution.error && (
+                    <p className="mt-1.5 line-clamp-2 text-xs text-red-600 dark:text-red-400">
+                      {execution.error}
+                    </p>
+                  )}
 
-                      {/* Content */}
-                      <div className="flex-1 min-w-0">
-                        {/* Top row: name + status icon */}
-                        <div className="flex items-start justify-between gap-2">
-                          <div className="min-w-0">
-                            <p className="text-sm font-medium leading-snug truncate">
-                              {app?.name ?? log.app}
-                            </p>
-                            {step?.name && (
-                              <p className="text-xs text-muted-foreground truncate leading-snug">
-                                {step.name}
+                  <ol className="mt-3 space-y-2.5">
+                    {execution.steps.map((step: IExecutionStep) => {
+                      const app = getAppDetails(step.integration);
+                      const event = getStepDetails(
+                        step.eventName,
+                        step.integration,
+                        step.stepType,
+                      );
+
+                      return (
+                        <li key={step.id} className="flex items-start gap-2.5">
+                          {app?.icon ? (
+                            <img
+                              src={app.icon}
+                              alt={app.name}
+                              className="mt-0.5 h-6 w-6 shrink-0 rounded object-contain"
+                            />
+                          ) : (
+                            <div className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded bg-muted">
+                              <span className="text-[10px] font-semibold text-muted-foreground">
+                                {step.integration.substring(0, 2).toUpperCase()}
+                              </span>
+                            </div>
+                          )}
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-2">
+                              <p className="truncate text-sm font-medium leading-snug">
+                                {event?.name ?? app?.name ?? step.eventName}
+                              </p>
+                              <span
+                                title={statusConfig[step.status]?.label}
+                                className={cn(
+                                  'size-1.5 shrink-0 rounded-full',
+                                  statusConfig[step.status]?.dot,
+                                )}
+                              />
+                            </div>
+                            {step.message && (
+                              <p className="line-clamp-2 text-xs text-muted-foreground">
+                                {step.message}
                               </p>
                             )}
                           </div>
-                          {/* Status badge */}
-                          <span
-                            className={cn(
-                              'inline-flex items-center gap-1 shrink-0 text-[11px] font-medium px-2 py-0.5 rounded-full border',
-                              status.classes,
-                            )}
-                          >
-                            {status.icon}
-                            {status.label}
-                          </span>
-                        </div>
-
-                        {/* Message */}
-                        {log.message && (
-                          <p className="text-xs text-muted-foreground mt-1.5 line-clamp-2">
-                            {log.message}
-                          </p>
-                        )}
-
-                        {/* Bottom row: step type + date */}
-                        <div className="flex items-center gap-2 mt-2 flex-wrap">
-                          <span className="inline-flex items-center text-[10px] font-medium px-1.5 py-0.5 rounded bg-muted text-muted-foreground uppercase tracking-wide">
-                            {log.stepType}
-                          </span>
-                          <span className="text-[11px] text-muted-foreground">
-                            {formatDate(log.createdAt)}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
+                        </li>
+                      );
+                    })}
+                  </ol>
+                </div>
+              ))}
 
               <div ref={observerTarget} className="h-4" />
 
@@ -289,7 +273,7 @@ const LogsSheet = ({ open, onOpenChange }: ILogsSheetProps) => {
                 </div>
               )}
 
-              {!hasNextPage && allLogs.length > 0 && (
+              {!hasNextPage && executions.length > 0 && (
                 <div className="text-center py-4">
                   <p className="text-[11px] text-muted-foreground">
                     You've reached the end
@@ -301,6 +285,21 @@ const LogsSheet = ({ open, onOpenChange }: ILogsSheetProps) => {
         </div>
       </SheetContent>
     </Sheet>
+  );
+};
+
+const StatusBadge = ({ status }: { status: ExecutionStatus }) => {
+  const config = statusConfig[status];
+  return (
+    <span
+      className={cn(
+        'inline-flex shrink-0 items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-medium',
+        config?.classes ?? 'border-border bg-muted text-muted-foreground',
+      )}
+    >
+      {config?.icon}
+      {config?.label ?? status}
+    </span>
   );
 };
 

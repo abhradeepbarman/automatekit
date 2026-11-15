@@ -1,8 +1,13 @@
-import apps from '@repo/integrations';
-import { ExecutionStatus, StepType, type IApp } from '@repo/common/types';
-import { decryptSymmetric, logger } from '@repo/common/utils';
+import {
+  ConnectionCredentials,
+  ExecutionStatus,
+  StepType,
+  type IApp,
+} from '@repo/common/types';
+import { decryptJson, logger } from '@repo/common/utils';
 import db from '@repo/db';
 import { connections, steps, workflows } from '@repo/db/schema';
+import apps from '@repo/integrations';
 import {
   actionQueue,
   actionQueueName,
@@ -11,29 +16,19 @@ import {
 } from '@repo/queue';
 import { Job, Worker } from 'bullmq';
 import { and, eq } from 'drizzle-orm';
-import { createExecutionLog, replaceVariables } from '../helpers';
+import {
+  failExecution,
+  finishExecution,
+  finishExecutionStep,
+  replaceVariables,
+  startExecutionStep,
+} from '../helpers';
 import { getRefreshTokenAndUpdate } from './trigger-worker';
 
 export const actionWorker = new Worker<ActionJobData>(
   actionQueueName,
   async (job: Job<ActionJobData>) => {
-    const { stepIndex, jobId, workflowId, dataAvailable } = job.data;
-
-    const stepDetails = await db.query.steps.findFirst({
-      where: and(eq(steps.index, stepIndex), eq(steps.workflowId, workflowId)),
-    });
-
-    if (!stepDetails) {
-      logger.info(
-        `Workflow ${workflowId} finished: no step at index ${stepIndex}`,
-      );
-      return;
-    }
-
-    if (stepDetails.type !== StepType.ACTION) {
-      logger.error(`Step ${stepIndex} is not an action step`);
-      return;
-    }
+    const { stepIndex, executionId, workflowId, dataAvailable } = job.data;
 
     const workflowDetails = await db.query.workflows.findFirst({
       where: eq(workflows.id, workflowId),
@@ -44,174 +39,104 @@ export const actionWorker = new Worker<ActionJobData>(
     }
 
     if (!workflowDetails.isActive) {
-      logger.info(`Workflow ${workflowId} is not active, skipping step`);
-      return;
-    }
-
-    const app: IApp | undefined = apps.find((a) => a.id === stepDetails.app);
-    if (!app || !app.actions) {
-      logger.error(`App ${stepDetails.app} not found`);
-      return;
-    }
-
-    const actionDetails = app.actions.find(
-      (a) => a.id === stepDetails.eventName,
-    );
-    if (!actionDetails) {
-      logger.error(
-        `Action ${stepDetails.eventName} not found in app ${stepDetails.app}`,
-      );
-      return;
-    }
-
-    if (!stepDetails.connectionId) {
-      logger.error(`Step ${stepDetails.id} has no connection`);
-      await createExecutionLog(
-        workflowId,
-        app.id,
-        stepDetails.id,
-        actionDetails.id,
-        StepType.ACTION,
-        'Step has no connected account',
-        jobId,
+      await finishExecution(
+        executionId,
         ExecutionStatus.FAILED,
+        'Workflow was deactivated',
       );
       return;
     }
 
-    const connectionDetails = await db.query.connections.findFirst({
-      where: eq(connections.id, stepDetails.connectionId),
+    const stepDetails = await db.query.steps.findFirst({
+      where: and(eq(steps.index, stepIndex), eq(steps.workflowId, workflowId)),
     });
 
-    if (!connectionDetails) {
-      logger.error(`Connection ${stepDetails.connectionId} not found`);
-      await createExecutionLog(
-        workflowId,
-        app.id,
-        stepDetails.id,
-        actionDetails.id,
-        StepType.ACTION,
-        'Connected account no longer exists',
-        jobId,
-        ExecutionStatus.FAILED,
-      );
+    if (!stepDetails) {
+      logger.info(`Workflow ${workflowId} run ${executionId} completed`);
+      await finishExecution(executionId, ExecutionStatus.COMPLETED);
       return;
     }
-
-    const decryptedAccessToken = decryptSymmetric(
-      connectionDetails.accessTokenEncrypt,
-      connectionDetails.accessTokenIV,
-      connectionDetails.accessTokenTag,
-    );
 
     const rawFields = (stepDetails.metadata as any)?.data?.fields ?? {};
-    const metadata = replaceVariables(rawFields, dataAvailable);
+    const input = replaceVariables(rawFields, dataAvailable);
+    const executionStepId = await startExecutionStep(
+      executionId,
+      stepDetails,
+      input,
+    );
+    const fail = (message: string) =>
+      failExecution(executionId, executionStepId, message);
 
-    let result = await actionDetails.run({
-      metadata,
-      accessToken: decryptedAccessToken,
-    });
+    if (stepDetails.type !== StepType.ACTION) {
+      return fail(`Step ${stepIndex} is not an action step`);
+    }
 
-    let dataToPass = result.data;
+    const app: IApp | undefined = apps.find(
+      (a) => a.id === stepDetails.integration,
+    );
+    const action = app?.actions?.find((a) => a.id === stepDetails.eventName);
+    if (!app || !action) {
+      return fail(
+        `Action ${stepDetails.eventName} not found in ${stepDetails.integration}`,
+      );
+    }
 
-    if (!result.success && result.statusCode === 401) {
+    let accessToken = '';
+    if (app.auth) {
+      if (!stepDetails.connectionId) {
+        return fail('Step has no connected account');
+      }
+
+      const connection = await db.query.connections.findFirst({
+        where: eq(connections.id, stepDetails.connectionId),
+      });
+      if (!connection) {
+        return fail('Connected account no longer exists');
+      }
+
+      accessToken =
+        decryptJson<ConnectionCredentials>(connection.credentials)
+          .accessToken ?? '';
+    }
+
+    let result = await action.run({ metadata: input, accessToken });
+
+    if (
+      !result.success &&
+      result.statusCode === 401 &&
+      stepDetails.connectionId
+    ) {
       try {
-        const { access_token } = await getRefreshTokenAndUpdate(
-          connectionDetails.id,
+        const tokens = await getRefreshTokenAndUpdate(
+          stepDetails.connectionId,
           app,
         );
-
-        if (!access_token) {
-          await createExecutionLog(
-            workflowId,
-            app.id,
-            stepDetails.id,
-            actionDetails.id,
-            StepType.ACTION,
-            'Failed to refresh token',
-            jobId,
-            ExecutionStatus.FAILED,
-          );
-          return;
-        }
-
-        result = await actionDetails.run({
-          metadata,
-          accessToken: access_token,
+        result = await action.run({
+          metadata: input,
+          accessToken: tokens.access_token,
         });
-
-        if (!result.success) {
-          await createExecutionLog(
-            workflowId,
-            app.id,
-            stepDetails.id,
-            actionDetails.id,
-            StepType.ACTION,
-            result.message || 'Failed after token refresh',
-            jobId,
-            ExecutionStatus.FAILED,
-          );
-          return;
-        }
-
-        dataToPass = result.data;
       } catch (refreshError) {
         logger.error('Error refreshing token: ' + refreshError);
-        await createExecutionLog(
-          workflowId,
-          app.id,
-          stepDetails.id,
-          actionDetails.id,
-          StepType.ACTION,
-          'Failed to refresh token',
-          jobId,
-          ExecutionStatus.FAILED,
-        );
-        return;
+        return fail('Failed to refresh token');
       }
-    } else if (!result.success) {
-      logger.error(`Action ${actionDetails.name} failed: ${result.message}`);
-      await createExecutionLog(
-        workflowId,
-        app.id,
-        stepDetails.id,
-        actionDetails.id,
-        StepType.ACTION,
-        result.message,
-        jobId,
-        ExecutionStatus.FAILED,
-      );
-      return;
     }
 
-    await createExecutionLog(
-      workflowId,
-      app.id,
-      stepDetails.id,
-      actionDetails.id,
-      StepType.ACTION,
-      result.message || `Action ${actionDetails.name} completed successfully`,
-      jobId,
-      ExecutionStatus.COMPLETED,
-    );
+    if (!result.success) {
+      logger.error(`Action ${action.name} failed: ${result.message}`);
+      return fail(result.message || `Action ${action.name} failed`);
+    }
 
-    const nextStep = await db.query.steps.findFirst({
-      where: and(
-        eq(steps.index, stepIndex + 1),
-        eq(steps.workflowId, workflowId),
-      ),
+    await finishExecutionStep(executionStepId, {
+      status: ExecutionStatus.COMPLETED,
+      message: result.message || `Action ${action.name} completed successfully`,
+      output: result.data,
     });
 
-    if (!nextStep) {
-      logger.info(`Workflow ${workflowId} run ${jobId} completed`);
-      return;
-    }
-
     await actionQueue.add(actionQueueName, {
-      stepIndex: stepIndex + 1,
       workflowId,
-      jobId,
-      dataAvailable: dataToPass,
+      executionId,
+      stepIndex: stepIndex + 1,
+      dataAvailable: result.data,
     });
   },
   {

@@ -14,7 +14,7 @@ export interface ICreateWorkflowResponse {
 export interface IStep {
   id: string;
   type: string;
-  app: string;
+  integration: string;
   connectionId: string;
   workflowId: string;
   lastExecutedAt: string;
@@ -52,26 +52,39 @@ export interface IGetAllWorkflowsResponse {
   };
 }
 
-export interface IExecutionLog {
+export interface IExecutionStep {
   id: string;
-  workflowId: string;
-  app: string;
+  executionId: string;
   stepId: string | null;
-  /** Integration event slug (e.g. 'send-email'); use this for display lookups. */
-  eventName: string | null;
+  stepIndex: number;
   stepType: StepType;
-  jobId: string;
-  message: string;
+  integration: string;
+  eventName: string;
   status: ExecutionStatus;
-  createdAt: string;
-  updatedAt: string;
+  input: unknown;
+  output: unknown;
+  message: string | null;
+  startedAt: string;
+  finishedAt: string | null;
 }
 
-export interface IGetWorkflowExecutionLogsResponse {
-  executionLogs: IExecutionLog[];
+export interface IExecution {
+  id: string;
+  workflowId: string;
+  status: ExecutionStatus;
+  triggerData: unknown;
+  error: string | null;
+  startedAt: string;
+  finishedAt: string | null;
+  steps: IExecutionStep[];
+}
+
+export interface IGetWorkflowExecutionsResponse {
+  executions: IExecution[];
   pagination: {
     page: number;
     limit: number;
+    total: number;
     hasMore: boolean;
   };
 }
@@ -113,14 +126,15 @@ class WorkflowService {
     return data.data;
   }
 
-  async getExecutionLogs(
+  async getExecutions(
     workflowId: string,
+    page: number = 1,
     limit: number = 20,
-    offset: number = 1,
-  ): Promise<IGetWorkflowExecutionLogsResponse> {
-    const { data } = await axiosInstance.get(`/workflow/${workflowId}/logs`, {
-      params: { limit, offset },
-    });
+  ): Promise<IGetWorkflowExecutionsResponse> {
+    const { data } = await axiosInstance.get(
+      `/workflow/${workflowId}/executions`,
+      { params: { page, limit } },
+    );
     return data.data;
   }
 }

@@ -1,39 +1,6 @@
 import { drizzle } from 'drizzle-orm/node-postgres';
 import { Pool } from 'pg';
-import {
-  connectionRelations,
-  connections,
-  executionLogRelations,
-  executionLogs,
-  passwordTokenRelations,
-  passwordTokens,
-  stepRelations,
-  steps,
-  userRelations,
-  users,
-  webhookRelations,
-  webhooks,
-  workflowRelations,
-  workflows,
-} from './schema';
-
-const schema = {
-  users,
-  workflows,
-  steps,
-  connections,
-  executionLogs,
-  passwordTokens,
-  webhooks,
-
-  userRelations,
-  workflowRelations,
-  stepRelations,
-  connectionRelations,
-  executionLogRelations,
-  passwordTokenRelations,
-  webhookRelations,
-};
+import * as schema from './schema';
 
 if (!process.env.DATABASE_URL) {
   throw new Error('DATABASE_URL is not set');

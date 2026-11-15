@@ -1,4 +1,3 @@
-import { StepType } from '@repo/common/types';
 import { relations } from 'drizzle-orm';
 import {
   integer,
@@ -10,33 +9,30 @@ import {
   varchar,
 } from 'drizzle-orm/pg-core';
 import { connections } from './connections';
-import { workflows } from './workflows';
-import { executionLogs } from './executions-logs';
+import { stepTypeEnum } from './enums';
+import { executionSteps } from './execution-steps';
 import { webhooks } from './webhooks';
+import { workflows } from './workflows';
 
 export const steps = pgTable(
   'steps',
   {
-    id: uuid('id').primaryKey().defaultRandom().notNull(),
+    id: uuid('id').primaryKey().defaultRandom(),
     workflowId: uuid('workflow_id')
-      .references(() => workflows.id, {
-        onDelete: 'cascade',
-        onUpdate: 'no action',
-      })
-      .notNull(),
-    type: varchar('type', {
-      enum: [StepType.TRIGGER, StepType.ACTION],
-    }).notNull(),
-    eventName: varchar('event_name').notNull(),
-    index: integer('index').notNull(),
-    app: varchar('app').notNull(),
-    metadata: jsonb('metadata'),
+      .notNull()
+      .references(() => workflows.id, { onDelete: 'cascade' }),
     connectionId: uuid('connection_id').references(() => connections.id, {
       onDelete: 'set null',
-      onUpdate: 'no action',
     }),
-    createdAt: timestamp('created_at').defaultNow().notNull(),
-    updatedAt: timestamp('updated_at')
+    type: stepTypeEnum('type').notNull(),
+    index: integer('index').notNull(),
+    integration: varchar('integration').notNull(),
+    eventName: varchar('event_name').notNull(),
+    metadata: jsonb('metadata'),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp('updated_at', { withTimezone: true })
       .defaultNow()
       .$onUpdate(() => new Date())
       .notNull(),
@@ -45,17 +41,14 @@ export const steps = pgTable(
 );
 
 export const stepRelations = relations(steps, ({ one, many }) => ({
-  workflows: one(workflows, {
+  workflow: one(workflows, {
     fields: [steps.workflowId],
     references: [workflows.id],
   }),
-  connections: one(connections, {
+  connection: one(connections, {
     fields: [steps.connectionId],
     references: [connections.id],
   }),
-  executionLogs: many(executionLogs),
-  webhooks: one(webhooks, {
-    fields: [steps.id],
-    references: [webhooks.stepId],
-  }),
+  webhook: one(webhooks),
+  executionSteps: many(executionSteps),
 }));

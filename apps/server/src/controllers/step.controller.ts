@@ -26,7 +26,7 @@ export const addStep = asyncHandler(
   async (req: Request, res: Response, next: NextFunction) => {
     const { id: workflowId } = req.params;
     const body = addStepSchema.parse(req.body);
-    let { app, eventName, metadata, index, type, connectionId } = body;
+    let { integration, eventName, metadata, index, type, connectionId } = body;
 
     const workflowDetails = await db.query.workflows.findFirst({
       where: and(eq(workflows.id, workflowId as string)),
@@ -40,7 +40,7 @@ export const addStep = asyncHandler(
       return next(CustomErrorHandler.notAllowed());
     }
 
-    const eventSchema = getEventSchema(app, eventName);
+    const eventSchema = getEventSchema(integration, eventName);
     if (
       eventSchema &&
       !eventSchema.safeParse(metadata?.data?.fields ?? {}).success
@@ -59,7 +59,7 @@ export const addStep = asyncHandler(
       .insert(steps)
       .values({
         workflowId: workflowId as string,
-        app,
+        integration,
         eventName,
         metadata,
         index: index,
@@ -88,7 +88,7 @@ export const addStep = asyncHandler(
       return next(CustomErrorHandler.serverError());
     }
 
-    if (app === AppType.SYSTEM && eventName === SystemEvent.WEBHOOK) {
+    if (integration === AppType.SYSTEM && eventName === SystemEvent.WEBHOOK) {
       const path = nanoid();
       const [newWebhook] = await db
         .insert(webhooks)
@@ -109,6 +109,7 @@ export const addStep = asyncHandler(
           ...metadata.data,
           webhook: {
             id: newWebhook.id,
+            method: newWebhook.method,
             url: `${envConfig.API_URL}/api/v1/webhook/${path}`,
           },
         },
@@ -136,7 +137,7 @@ export const getStep = asyncHandler(
     const stepDetails = await db.query.steps.findFirst({
       where: and(eq(steps.id, stepId as string)),
       with: {
-        workflows: true,
+        workflow: true,
       },
     });
 
@@ -144,7 +145,7 @@ export const getStep = asyncHandler(
       return next(CustomErrorHandler.notFound('Step not found'));
     }
 
-    if (stepDetails.workflows.userId != userId) {
+    if (stepDetails.workflow.userId != userId) {
       return next(CustomErrorHandler.notAllowed());
     }
 
@@ -161,7 +162,7 @@ export const deleteStep = asyncHandler(
     const stepDetails = await db.query.steps.findFirst({
       where: and(eq(steps.id, stepId as string)),
       with: {
-        workflows: true,
+        workflow: true,
       },
     });
 
@@ -169,7 +170,7 @@ export const deleteStep = asyncHandler(
       return next(CustomErrorHandler.notFound('Step not found'));
     }
 
-    if (stepDetails.workflows.userId !== req.user.id) {
+    if (stepDetails.workflow.userId !== req.user.id) {
       return next(CustomErrorHandler.notAllowed());
     }
 
@@ -206,7 +207,7 @@ export const updateStep = asyncHandler(
     const stepDetails = await db.query.steps.findFirst({
       where: and(eq(steps.id, stepId as string)),
       with: {
-        workflows: true,
+        workflow: true,
       },
     });
 
@@ -214,7 +215,7 @@ export const updateStep = asyncHandler(
       return next(CustomErrorHandler.notFound('Step not found'));
     }
 
-    if (stepDetails.workflows.userId !== req.user.id) {
+    if (stepDetails.workflow.userId !== req.user.id) {
       return next(CustomErrorHandler.notAllowed());
     }
 

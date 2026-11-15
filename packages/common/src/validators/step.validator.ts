@@ -3,7 +3,7 @@ import { StepType } from '../types';
 
 export const addStepSchema = z
   .object({
-    app: z.string(),
+    integration: z.string(),
     eventName: z.string(),
     metadata: z.any().optional(),
     index: z.number(),
@@ -21,11 +21,11 @@ export const addStepSchema = z
 
 export const updateStepSchema = z
   .object({
-    app: z.string().optional(),
+    integration: z.string().optional(),
     metadata: z.any().optional(),
     connectionId: z.string().optional(),
   })
   .refine((data) => Object.keys(data).length > 0, {
     message: 'Nothing to update',
-    path: ['app', 'metadata', 'connectionId'],
+    path: ['integration', 'metadata', 'connectionId'],
   });
