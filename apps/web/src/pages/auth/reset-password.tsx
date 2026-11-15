@@ -7,7 +7,6 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
@@ -25,17 +24,15 @@ import { useMutation } from '@tanstack/react-query';
 import authService from '@/services/auth.service';
 import { toast } from 'sonner';
 import type { AxiosError } from 'axios';
-import { useState } from 'react';
-import { Eye, EyeOff, KeyRound } from 'lucide-react';
+import { KeyRound } from 'lucide-react';
 import AuthShell from '@/components/common/auth-shell';
+import PasswordInput from '@/components/common/password-input';
 
 type ResetPasswordForm = z.infer<typeof resetPasswordSchema>;
 
 export default function ResetPassword() {
   const { token } = useParams<{ token: string }>();
   const navigate = useNavigate();
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const form = useForm<ResetPasswordForm>({
     resolver: zodResolver(resetPasswordSchema),
@@ -45,7 +42,7 @@ export default function ResetPassword() {
     },
   });
 
-  const { mutateAsync: doResetPassword } = useMutation({
+  const { mutate: doResetPassword, isPending } = useMutation({
     mutationFn: (values: ResetPasswordForm) =>
       authService.resetPassword(
         token!,
@@ -68,30 +65,6 @@ export default function ResetPassword() {
     },
   });
 
-  async function onSubmit(values: ResetPasswordForm) {
-    await doResetPassword(values);
-  }
-
-  if (!token) {
-    return (
-      <AuthShell>
-        <Card className="border-border/60 text-center shadow-xl shadow-foreground/5">
-          <CardContent className="space-y-3 pb-8 pt-10">
-            <p className="text-lg font-semibold text-destructive">
-              Invalid Reset Link
-            </p>
-            <p className="text-sm text-muted-foreground">
-              This password reset link is missing a token and is invalid.
-            </p>
-            <Button asChild className="mt-4">
-              <Link to="/forgot-password">Request a new link</Link>
-            </Button>
-          </CardContent>
-        </Card>
-      </AuthShell>
-    );
-  }
-
   return (
     <AuthShell tagline="Automate smarter. Work faster.">
       <Card className="border-border/60 shadow-xl shadow-foreground/5">
@@ -110,7 +83,10 @@ export default function ResetPassword() {
         </CardHeader>
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+          <form
+            onSubmit={form.handleSubmit((values) => doResetPassword(values))}
+            className="space-y-6"
+          >
             <CardContent className="space-y-4">
               {/* New Password */}
               <FormField
@@ -120,27 +96,7 @@ export default function ResetPassword() {
                   <FormItem>
                     <FormLabel>New Password</FormLabel>
                     <FormControl>
-                      <div className="relative">
-                        <Input
-                          type={showPassword ? 'text' : 'password'}
-                          placeholder="••••••••"
-                          autoComplete="new-password"
-                          {...field}
-                        />
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                          onClick={() => setShowPassword(!showPassword)}
-                        >
-                          {showPassword ? (
-                            <EyeOff className="h-4 w-4 text-muted-foreground" />
-                          ) : (
-                            <Eye className="h-4 w-4 text-muted-foreground" />
-                          )}
-                        </Button>
-                      </div>
+                      <PasswordInput autoComplete="new-password" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -155,29 +111,7 @@ export default function ResetPassword() {
                   <FormItem>
                     <FormLabel>Confirm New Password</FormLabel>
                     <FormControl>
-                      <div className="relative">
-                        <Input
-                          type={showConfirmPassword ? 'text' : 'password'}
-                          placeholder="••••••••"
-                          autoComplete="new-password"
-                          {...field}
-                        />
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                          onClick={() =>
-                            setShowConfirmPassword(!showConfirmPassword)
-                          }
-                        >
-                          {showConfirmPassword ? (
-                            <EyeOff className="h-4 w-4 text-muted-foreground" />
-                          ) : (
-                            <Eye className="h-4 w-4 text-muted-foreground" />
-                          )}
-                        </Button>
-                      </div>
+                      <PasswordInput autoComplete="new-password" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -187,11 +121,9 @@ export default function ResetPassword() {
               <Button
                 type="submit"
                 className="w-full h-11 text-base font-medium"
-                disabled={form.formState.isSubmitting}
+                disabled={isPending}
               >
-                {form.formState.isSubmitting
-                  ? 'Resetting...'
-                  : 'Reset password'}
+                {isPending ? 'Resetting...' : 'Reset password'}
               </Button>
             </CardContent>
           </form>

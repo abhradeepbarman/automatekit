@@ -18,7 +18,8 @@ import {
   GOOGLE_AUTH_URL,
   OAUTH_STATE_COOKIE,
 } from '../constants';
-import { getGoogleProfile, getGoogleTokens, sendEmail } from '../services';
+import { sendEmail } from '../config/mail';
+import { getGoogleProfile, getGoogleTokens } from '../services';
 import { forgotPasswordEmailTemplate } from '../templates';
 import {
   asyncHandler,
@@ -202,7 +203,7 @@ export const sendForgotPasswordEmail = asyncHandler(
 
     const link = `${envConfig.APP_URL}/reset-password/${rawToken}`;
     const html = forgotPasswordEmailTemplate(existingUser.name, link);
-    await sendEmail({ to: email, subject: 'Reset Your Password', body: html });
+    await sendEmail({ to: email, subject: 'Reset Your Password', html });
 
     return genericResponse();
   },

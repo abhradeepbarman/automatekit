@@ -11,6 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Link } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
+import { forgotPasswordSchema } from '@repo/common/validators';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
   Form,
@@ -28,15 +29,10 @@ import { useState } from 'react';
 import { Mail, ArrowLeft, CheckCircle } from 'lucide-react';
 import AuthShell from '@/components/common/auth-shell';
 
-const forgotPasswordSchema = z.object({
-  email: z.string().min(1, 'Email is required').email('Invalid email'),
-});
-
 type ForgotPasswordForm = z.infer<typeof forgotPasswordSchema>;
 
 export default function ForgotPassword() {
-  const [emailSent, setEmailSent] = useState(false);
-  const [submittedEmail, setSubmittedEmail] = useState('');
+  const [submittedEmail, setSubmittedEmail] = useState<string | null>(null);
 
   const form = useForm<ForgotPasswordForm>({
     resolver: zodResolver(forgotPasswordSchema),
@@ -45,13 +41,10 @@ export default function ForgotPassword() {
     },
   });
 
-  const { mutateAsync: sendForgotPasswordEmail } = useMutation({
+  const { mutate: sendForgotPasswordEmail, isPending } = useMutation({
     mutationFn: (values: ForgotPasswordForm) =>
       authService.forgotPassword(values.email),
-    onSuccess: () => {
-      setSubmittedEmail(form.getValues('email'));
-      setEmailSent(true);
-    },
+    onSuccess: (_, values) => setSubmittedEmail(values.email),
     onError: (error: AxiosError<{ message: string }>) => {
       console.error('Forgot password failed:', error);
       toast.error('Failed to send email', {
@@ -62,13 +55,9 @@ export default function ForgotPassword() {
     },
   });
 
-  async function onSubmit(values: ForgotPasswordForm) {
-    await sendForgotPasswordEmail(values);
-  }
-
   return (
     <AuthShell tagline="Automate smarter. Work faster.">
-      {emailSent ? (
+      {submittedEmail ? (
         /* Success State */
         <Card className="border-border/60 shadow-xl shadow-foreground/5">
           <CardHeader className="space-y-1 pb-6">
@@ -93,7 +82,7 @@ export default function ForgotPassword() {
             <Button
               variant="outline"
               className="w-full mt-4"
-              onClick={() => setEmailSent(false)}
+              onClick={() => setSubmittedEmail(null)}
             >
               Try a different email
             </Button>
@@ -128,7 +117,12 @@ export default function ForgotPassword() {
           </CardHeader>
 
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            <form
+              onSubmit={form.handleSubmit((values) =>
+                sendForgotPasswordEmail(values),
+              )}
+              className="space-y-6"
+            >
               <CardContent className="space-y-4">
                 <FormField
                   control={form.control}
@@ -152,11 +146,9 @@ export default function ForgotPassword() {
                 <Button
                   type="submit"
                   className="w-full h-11 text-base font-medium"
-                  disabled={form.formState.isSubmitting}
+                  disabled={isPending}
                 >
-                  {form.formState.isSubmitting
-                    ? 'Sending...'
-                    : 'Send reset link'}
+                  {isPending ? 'Sending...' : 'Send reset link'}
                 </Button>
               </CardContent>
             </form>

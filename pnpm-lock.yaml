@@ -337,6 +337,9 @@ importers:
       '@types/pg':
         specifier: ^8.16.0
         version: 8.18.0
+      cross-env:
+        specifier: ^10.1.0
+        version: 10.1.0
       drizzle-kit:
         specifier: ^0.31.8
         version: 0.31.9

@@ -13,7 +13,6 @@ import {
 import { Button } from '@/components/ui/button';
 import {
   Card,
-  CardAction,
   CardContent,
   CardDescription,
   CardHeader,
@@ -60,7 +59,7 @@ const Dashboard = () => {
     queryFn: () => workflowService.getAllWorkflows(page, limit),
   });
 
-  const { mutateAsync: createWorkflowFn, isPending } = useMutation({
+  const { mutate: createWorkflow, isPending } = useMutation({
     mutationFn: () => workflowService.createWorkflow(),
     onSuccess: (data) => navigate(`/workflow/${data.id}`),
     onError: (error: AxiosError<{ message: string }>) => {
@@ -73,10 +72,6 @@ const Dashboard = () => {
     },
   });
 
-  const handleCreateWorkflow = async () => {
-    await createWorkflowFn();
-  };
-
   const handlePreviousPage = () => {
     if (page > 1) setPage(page - 1);
   };
@@ -84,19 +79,6 @@ const Dashboard = () => {
   const handleNextPage = () => {
     if (workflowsData && page < workflowsData.pagination.totalPages) {
       setPage(page + 1);
-    }
-  };
-
-  const handlePageClick = (pageNum: number) => {
-    setPage(pageNum);
-  };
-
-  const formatLastRun = (lastExecutedAt: string | null) => {
-    if (!lastExecutedAt) return 'Never';
-    try {
-      return formatDate(lastExecutedAt);
-    } catch {
-      return 'Never';
     }
   };
 
@@ -140,7 +122,7 @@ const Dashboard = () => {
             <Button
               size="lg"
               className="group h-11 gap-2 rounded-xl shadow-sm"
-              onClick={handleCreateWorkflow}
+              onClick={() => createWorkflow()}
               disabled={isPending}
             >
               <Plus className="size-4 transition-transform group-hover:rotate-90" />
@@ -155,19 +137,19 @@ const Dashboard = () => {
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <StatCard
               title="Workflows"
-              value={stats?.totalWorkflows?.toString() || '0'}
+              value={stats?.totalWorkflows ?? 0}
               subtitle="All time"
               icon={WorkflowIcon}
             />
             <StatCard
               title="Runs"
-              value={stats?.totalRuns?.toString() || '0'}
+              value={stats?.totalRuns ?? 0}
               subtitle="Last 30 days"
               icon={Activity}
             />
             <StatCard
               title="Errors"
-              value={stats?.totalErrors?.toString() || '0'}
+              value={stats?.totalErrors ?? 0}
               subtitle="Last 30 days"
               icon={CircleAlert}
               accent="destructive"
@@ -180,13 +162,6 @@ const Dashboard = () => {
               <CardDescription>
                 Your most recently created automations
               </CardDescription>
-              {pagination && pagination.total > 0 && (
-                <CardAction>
-                  <span className="inline-flex rounded-full border border-border bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground">
-                    {pagination.total} total
-                  </span>
-                </CardAction>
-              )}
             </CardHeader>
 
             <CardContent className="px-3 sm:px-4">
@@ -209,7 +184,7 @@ const Dashboard = () => {
                   </div>
                   <Button
                     className="mt-1 gap-2"
-                    onClick={handleCreateWorkflow}
+                    onClick={() => createWorkflow()}
                     disabled={isPending}
                   >
                     <Plus className="size-4" />
@@ -224,9 +199,13 @@ const Dashboard = () => {
                       id={workflow.id}
                       name={workflow.name}
                       isActive={workflow.isActive}
-                      lastRun={formatLastRun(workflow.lastExecutedAt)}
+                      lastRun={
+                        workflow.lastExecutedAt
+                          ? formatDate(workflow.lastExecutedAt)
+                          : 'Never'
+                      }
                       createdAt={workflow.createdAt}
-                      onClick={() => navigate(`/workflow/${workflow.id}`)}
+                      onOpen={() => navigate(`/workflow/${workflow.id}`)}
                     />
                   ))}
                 </div>
@@ -252,13 +231,12 @@ const Dashboard = () => {
                       { length: pagination.totalPages },
                       (_, i) => i + 1,
                     )
-                      .filter((p) => {
-                        return (
+                      .filter(
+                        (p) =>
                           p === 1 ||
                           p === pagination.totalPages ||
-                          Math.abs(p - page) <= 1
-                        );
-                      })
+                          Math.abs(p - page) <= 1,
+                      )
                       .map((pageNum, idx, arr) => {
                         const showEllipsisBefore =
                           idx > 0 && pageNum - arr[idx - 1] > 1;
@@ -273,7 +251,7 @@ const Dashboard = () => {
                             <PaginationItem>
                               <PaginationLink
                                 isActive={pageNum === page}
-                                onClick={() => handlePageClick(pageNum)}
+                                onClick={() => setPage(pageNum)}
                                 className="cursor-pointer"
                               >
                                 {pageNum}
@@ -314,7 +292,7 @@ const StatCard = ({
   accent = 'default',
 }: {
   title: string;
-  value: string;
+  value: number;
   subtitle: string;
   icon: LucideIcon;
   accent?: 'default' | 'destructive';
@@ -366,14 +344,14 @@ const WorkflowItem = ({
   isActive,
   lastRun,
   createdAt,
-  onClick,
+  onOpen,
 }: {
   id: string;
   name: string;
   isActive: boolean;
   lastRun: string;
   createdAt: string;
-  onClick?: () => void;
+  onOpen: () => void;
 }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editedName, setEditedName] = useState(name);
@@ -460,15 +438,8 @@ const WorkflowItem = ({
     }
   };
 
-  const handleDelete = () => {
-    deleteWorkflow();
-  };
-
   return (
-    <div
-      className="group flex cursor-pointer items-center justify-between gap-3 rounded-xl px-3 py-3.5 transition-colors hover:bg-muted/60"
-      onClick={isEditing ? undefined : onClick}
-    >
+    <div className="group flex items-center justify-between gap-3 rounded-xl px-3 py-3.5 transition-colors hover:bg-muted/60">
       <div className="flex min-w-0 flex-1 items-center gap-3">
         <span
           className={cn(
@@ -483,10 +454,7 @@ const WorkflowItem = ({
 
         <div className="min-w-0 flex-1">
           {isEditing ? (
-            <div
-              className="flex items-center gap-2"
-              onClick={(e) => e.stopPropagation()}
-            >
+            <div className="flex items-center gap-2">
               <Input
                 value={editedName}
                 onChange={(e) => setEditedName(e.target.value)}
@@ -516,58 +484,14 @@ const WorkflowItem = ({
             </div>
           ) : (
             <>
-              <div className="mb-1 flex items-center gap-1">
-                <p className="truncate font-medium">{name}</p>
-                <div className="flex items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    className="h-6 w-6 shrink-0 p-0"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setIsEditing(true);
-                    }}
-                  >
-                    <Pencil className="h-3 w-3 text-muted-foreground" />
-                  </Button>
-                  <AlertDialog
-                    open={showDeleteDialog}
-                    onOpenChange={setShowDeleteDialog}
-                  >
-                    <AlertDialogTrigger asChild>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        className="h-6 w-6 shrink-0 p-0 hover:bg-destructive/10"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                        }}
-                      >
-                        <Trash2 className="h-3 w-3 text-destructive" />
-                      </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent onClick={(e) => e.stopPropagation()}>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>Delete workflow?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          This action cannot be undone. This will permanently
-                          delete the workflow "{name}" and all its steps.
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction
-                          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                          onClick={handleDelete}
-                          disabled={isDeletePending}
-                        >
-                          {isDeletePending ? 'Deleting...' : 'Delete'}
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
-                </div>
-              </div>
+              <button
+                type="button"
+                className="mb-1 block max-w-full cursor-text truncate text-left font-medium hover:underline hover:decoration-dotted hover:underline-offset-4"
+                title="Rename workflow"
+                onClick={() => setIsEditing(true)}
+              >
+                {name}
+              </button>
               <div className="flex items-center gap-2 text-xs text-muted-foreground">
                 <span>Created {formatDate(createdAt)}</span>
                 <span className="size-0.5 rounded-full bg-muted-foreground/40" />
@@ -578,27 +502,52 @@ const WorkflowItem = ({
         </div>
       </div>
 
-      <div
-        className="flex shrink-0 items-center gap-2.5"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <span
-          className={cn(
-            'hidden items-center gap-1.5 rounded-full border px-2 py-0.5 text-xs font-medium sm:inline-flex',
-            isActive
-              ? 'border-emerald-500/20 bg-emerald-500/10 text-emerald-600'
-              : 'border-border bg-muted text-muted-foreground',
-          )}
+      <div className="flex shrink-0 items-center gap-2.5">
+        <Button
+          size="sm"
+          variant="ghost"
+          className="h-8 w-8 shrink-0 p-0"
+          title="Edit workflow"
+          aria-label="Edit workflow"
+          onClick={onOpen}
         >
-          <span
-            className={cn(
-              'size-1.5 rounded-full',
-              isActive ? 'bg-emerald-500' : 'bg-muted-foreground/50',
-            )}
-          />
-          {isActive ? 'Active' : 'Inactive'}
-        </span>
+          <Pencil className="h-4 w-4 text-muted-foreground" />
+        </Button>
+        <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+          <AlertDialogTrigger asChild>
+            <Button
+              size="sm"
+              variant="ghost"
+              className="h-8 w-8 shrink-0 p-0 hover:bg-destructive/10"
+              title="Delete workflow"
+              aria-label="Delete workflow"
+            >
+              <Trash2 className="h-4 w-4 text-destructive" />
+            </Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete workflow?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This action cannot be undone. This will permanently delete the
+                workflow "{name}" and all its steps.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                onClick={() => deleteWorkflow()}
+                disabled={isDeletePending}
+              >
+                {isDeletePending ? 'Deleting...' : 'Delete'}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
         <Switch
+          title={isActive ? 'Deactivate workflow' : 'Activate workflow'}
+          aria-label={isActive ? 'Deactivate workflow' : 'Activate workflow'}
           checked={isActive}
           onCheckedChange={(checked) => toggleWorkflowStatus(checked)}
           disabled={isStatusPending}

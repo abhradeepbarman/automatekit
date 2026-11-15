@@ -22,21 +22,17 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation } from '@tanstack/react-query';
 import authService from '@/services/auth.service';
 import { toast } from 'sonner';
 import { useAuth } from '@/context/auth-context';
 import GoogleLoginButton from '@/components/common/google-login-button';
 import AuthShell from '@/components/common/auth-shell';
-
-import { Eye, EyeOff } from 'lucide-react';
-import { useState } from 'react';
+import PasswordInput from '@/components/common/password-input';
 import type { AxiosError } from 'axios';
 
 export default function Login() {
-  const [showPassword, setShowPassword] = useState(false);
   const { setUserCredentials } = useAuth();
-  const queryClient = useQueryClient();
   const navigate = useNavigate();
   const form = useForm<z.infer<typeof loginSchema>>({
     resolver: zodResolver(loginSchema),
@@ -46,7 +42,7 @@ export default function Login() {
     },
   });
 
-  const { mutateAsync: userLogin } = useMutation({
+  const { mutate: userLogin, isPending } = useMutation({
     mutationFn: (values: z.infer<typeof loginSchema>) =>
       authService.login(values.email, values.password),
     onSuccess: (data) => {
@@ -55,7 +51,6 @@ export default function Login() {
         description: 'Redirecting to dashboard...',
       });
       navigate('/dashboard');
-      queryClient.invalidateQueries({ queryKey: ['me'] });
     },
     onError: (error: AxiosError<{ message: string }>) => {
       console.error('Login failed:', error);
@@ -65,10 +60,6 @@ export default function Login() {
       });
     },
   });
-
-  async function onSubmit(values: z.infer<typeof loginSchema>) {
-    await userLogin(values);
-  }
 
   return (
     <AuthShell tagline="Automate smarter. Work faster.">
@@ -83,7 +74,10 @@ export default function Login() {
         </CardHeader>
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+          <form
+            onSubmit={form.handleSubmit((values) => userLogin(values))}
+            className="space-y-6"
+          >
             <CardContent className="space-y-4">
               {/* Email */}
               <FormField
@@ -120,27 +114,10 @@ export default function Login() {
                       </Link>
                     </div>
                     <FormControl>
-                      <div className="relative">
-                        <Input
-                          type={showPassword ? 'text' : 'password'}
-                          placeholder="••••••••"
-                          autoComplete="current-password"
-                          {...field}
-                        />
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                          onClick={() => setShowPassword(!showPassword)}
-                        >
-                          {showPassword ? (
-                            <EyeOff className="h-4 w-4 text-muted-foreground" />
-                          ) : (
-                            <Eye className="h-4 w-4 text-muted-foreground" />
-                          )}
-                        </Button>
-                      </div>
+                      <PasswordInput
+                        autoComplete="current-password"
+                        {...field}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -150,9 +127,9 @@ export default function Login() {
               <Button
                 type="submit"
                 className="w-full h-11 text-base font-medium"
-                disabled={form.formState.isSubmitting}
+                disabled={isPending}
               >
-                {form.formState.isSubmitting ? 'Signing in...' : 'Sign in'}
+                {isPending ? 'Signing in...' : 'Sign in'}
               </Button>
 
               <div className="relative">

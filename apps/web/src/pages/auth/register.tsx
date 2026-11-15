@@ -21,22 +21,17 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation } from '@tanstack/react-query';
 import authService from '@/services/auth.service';
 import { toast } from 'sonner';
 import { useAuth } from '@/context/auth-context';
 import GoogleLoginButton from '@/components/common/google-login-button';
 import AuthShell from '@/components/common/auth-shell';
-
-import { Eye, EyeOff } from 'lucide-react';
-import { useState } from 'react';
+import PasswordInput from '@/components/common/password-input';
 import type { AxiosError } from 'axios';
 
 export default function Register() {
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const { setUserCredentials } = useAuth();
-  const queryClient = useQueryClient();
   const navigate = useNavigate();
   const form = useForm<z.infer<typeof registerSchema>>({
     resolver: zodResolver(registerSchema),
@@ -48,7 +43,7 @@ export default function Register() {
     },
   });
 
-  const { mutateAsync: userRegister } = useMutation({
+  const { mutate: userRegister, isPending } = useMutation({
     mutationFn: (values: z.infer<typeof registerSchema>) =>
       authService.register(
         values.name,
@@ -62,7 +57,6 @@ export default function Register() {
         description: 'Redirecting to dashboard...',
       });
       navigate('/dashboard');
-      queryClient.invalidateQueries({ queryKey: ['me'] });
     },
     onError: (error: AxiosError<{ message: string }>) => {
       console.error('Registration failed:', error);
@@ -73,10 +67,6 @@ export default function Register() {
       });
     },
   });
-
-  async function onSubmit(values: z.infer<typeof registerSchema>) {
-    await userRegister(values);
-  }
 
   return (
     <AuthShell tagline="Start automating smarter today">
@@ -91,7 +81,10 @@ export default function Register() {
         </CardHeader>
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+          <form
+            onSubmit={form.handleSubmit((values) => userRegister(values))}
+            className="space-y-6"
+          >
             <CardContent className="space-y-4">
               {/* Name */}
               <FormField
@@ -140,27 +133,7 @@ export default function Register() {
                   <FormItem>
                     <FormLabel>Password</FormLabel>
                     <FormControl>
-                      <div className="relative">
-                        <Input
-                          type={showPassword ? 'text' : 'password'}
-                          placeholder="••••••••"
-                          autoComplete="new-password"
-                          {...field}
-                        />
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                          onClick={() => setShowPassword(!showPassword)}
-                        >
-                          {showPassword ? (
-                            <EyeOff className="h-4 w-4 text-muted-foreground" />
-                          ) : (
-                            <Eye className="h-4 w-4 text-muted-foreground" />
-                          )}
-                        </Button>
-                      </div>
+                      <PasswordInput autoComplete="new-password" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -175,29 +148,7 @@ export default function Register() {
                   <FormItem>
                     <FormLabel>Confirm Password</FormLabel>
                     <FormControl>
-                      <div className="relative">
-                        <Input
-                          type={showConfirmPassword ? 'text' : 'password'}
-                          placeholder="••••••••"
-                          autoComplete="new-password"
-                          {...field}
-                        />
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                          onClick={() =>
-                            setShowConfirmPassword(!showConfirmPassword)
-                          }
-                        >
-                          {showConfirmPassword ? (
-                            <EyeOff className="h-4 w-4 text-muted-foreground" />
-                          ) : (
-                            <Eye className="h-4 w-4 text-muted-foreground" />
-                          )}
-                        </Button>
-                      </div>
+                      <PasswordInput autoComplete="new-password" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -207,11 +158,9 @@ export default function Register() {
               <Button
                 type="submit"
                 className="w-full h-11 text-base font-medium"
-                disabled={form.formState.isSubmitting}
+                disabled={isPending}
               >
-                {form.formState.isSubmitting
-                  ? 'Creating account...'
-                  : 'Create account'}
+                {isPending ? 'Creating account...' : 'Create account'}
               </Button>
 
               <div className="relative">
