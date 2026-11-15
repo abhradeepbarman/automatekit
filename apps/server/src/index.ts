@@ -8,7 +8,6 @@ import {
   credentialRoutes,
   dashboardRoutes,
   integrationsRoutes,
-  stepRoutes,
   webhookRoutes,
   workflowRoutes,
 } from './routes';
@@ -36,7 +35,6 @@ app.get('/health', (_req: Request, res: Response) => {
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/workflow', workflowRoutes);
 app.use('/api/v1/credential', credentialRoutes);
-app.use('/api/v1/step', stepRoutes);
 app.use('/api/v1/dashboard', dashboardRoutes);
 app.use('/api/v1/webhook', webhookRoutes);
 app.use('/api/v1/integrations', integrationsRoutes);

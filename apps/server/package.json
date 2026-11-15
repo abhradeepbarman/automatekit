@@ -6,7 +6,9 @@
   "scripts": {
     "start": "tsc && node dist/index.js",
     "dev": "cross-env NODE_OPTIONS=--conditions=development tsx watch src/index.ts",
-    "build": "tsc"
+    "build": "tsc",
+    "db:generate": "cross-env NODE_OPTIONS=--conditions=development drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate"
   },
   "keywords": [],
   "author": "",
@@ -35,6 +37,7 @@
     "@types/express": "^5.0.6",
     "@types/jsonwebtoken": "^9.0.10",
     "cross-env": "^10.1.0",
+    "drizzle-kit": "^0.31.8",
     "tsx": "^4.21.0"
   }
 }

@@ -1,49 +1,40 @@
 import axiosInstance from '@/lib/axios';
 import type { ExecutionStatus, StepType } from '@repo/common/types';
-import type { Node } from '@xyflow/react';
+import type { SaveWorkflowSteps } from '@repo/common/validators';
 
-export interface ICreateWorkflowResponse {
+export interface IWorkflow {
   id: string;
   name: string;
-  userId: string;
   isActive: boolean;
+  lastExecutedAt: string | null;
   createdAt: string;
   updatedAt: string;
 }
 
 export interface IStep {
   id: string;
-  type: string;
+  type: StepType;
+  index: number;
   integration: string;
-  connectionId: string;
-  workflowId: string;
-  lastExecutedAt: string;
   eventName: string;
-  metadata: Node;
-  createdAt: string;
-  updatedAt: string;
+  connectionId: string | null;
+  config: Record<string, unknown>;
+  position: { x: number; y: number };
+  webhook: { method: string; url: string } | null;
 }
 
-export interface IGetWorkflowResponse {
-  id: string;
-  name: string;
-  userId: string;
-  isActive: boolean;
-  createdAt: string;
-  updatedAt: string;
+export interface IEdge {
+  source: string;
+  target: string;
+}
+
+export interface IWorkflowDetails extends IWorkflow {
   steps: IStep[];
+  edges: IEdge[];
 }
 
 export interface IGetAllWorkflowsResponse {
-  workflows: Array<{
-    id: string;
-    name: string;
-    userId: string;
-    isActive: boolean;
-    createdAt: string;
-    updatedAt: string;
-    lastExecutedAt: string | null;
-  }>;
+  workflows: IWorkflow[];
   pagination: {
     page: number;
     limit: number;
@@ -54,7 +45,6 @@ export interface IGetAllWorkflowsResponse {
 
 export interface IExecutionStep {
   id: string;
-  executionId: string;
   stepId: string | null;
   stepIndex: number;
   stepType: StepType;
@@ -90,31 +80,23 @@ export interface IGetWorkflowExecutionsResponse {
 }
 
 class WorkflowService {
-  async createWorkflow(name?: string): Promise<ICreateWorkflowResponse> {
-    const { data } = await axiosInstance.post('/workflow', {
-      name,
-    });
-
-    return data.data;
-  }
-
-  async deleteWorkflow(workflowId: string) {
-    const { data } = await axiosInstance.delete(`/workflow/${workflowId}`);
-    return data.data;
-  }
-
-  async getWorkflow(workflowId: string): Promise<IGetWorkflowResponse> {
-    const { data } = await axiosInstance.get(`/workflow/${workflowId}`);
+  async createWorkflow(name?: string): Promise<IWorkflow> {
+    const { data } = await axiosInstance.post('/workflow', { name });
     return data.data;
   }
 
   async getAllWorkflows(
-    page: number = 1,
-    limit: number = 10,
+    page = 1,
+    limit = 10,
   ): Promise<IGetAllWorkflowsResponse> {
     const { data } = await axiosInstance.get('/workflow', {
       params: { page, limit },
     });
+    return data.data;
+  }
+
+  async getWorkflow(workflowId: string): Promise<IWorkflowDetails> {
+    const { data } = await axiosInstance.get(`/workflow/${workflowId}`);
     return data.data;
   }
 
@@ -126,14 +108,45 @@ class WorkflowService {
     return data.data;
   }
 
+  async deleteWorkflow(workflowId: string) {
+    const { data } = await axiosInstance.delete(`/workflow/${workflowId}`);
+    return data.data;
+  }
+
+  async saveSteps(
+    workflowId: string,
+    graph: SaveWorkflowSteps,
+  ): Promise<IWorkflowDetails> {
+    const { data } = await axiosInstance.put(
+      `/workflow/${workflowId}/steps`,
+      graph,
+    );
+    return data.data;
+  }
+
+  async runWorkflow(workflowId: string): Promise<{ executionId: string }> {
+    const { data } = await axiosInstance.post(`/workflow/${workflowId}/run`);
+    return data.data;
+  }
+
   async getExecutions(
     workflowId: string,
-    page: number = 1,
-    limit: number = 20,
+    page = 1,
+    limit = 20,
   ): Promise<IGetWorkflowExecutionsResponse> {
     const { data } = await axiosInstance.get(
       `/workflow/${workflowId}/executions`,
       { params: { page, limit } },
+    );
+    return data.data;
+  }
+
+  async getExecution(
+    workflowId: string,
+    executionId: string,
+  ): Promise<IExecution> {
+    const { data } = await axiosInstance.get(
+      `/workflow/${workflowId}/executions/${executionId}`,
     );
     return data.data;
   }

@@ -21,7 +21,7 @@ createRoot(document.getElementById('root')!).render(
     <BrowserRouter>
       <AuthProvider>
         <App />
-        <Toaster position="top-center" />
+        <Toaster />
       </AuthProvider>
     </BrowserRouter>
     <ReactQueryDevtools initialIsOpen={false} />

@@ -1,6 +1,5 @@
 import { AppType, type IApp } from '@repo/common/types';
-import triggers from './triggers';
-import actions from './actions';
+import { sendEmail } from './actions/send-email';
 import auth from './auth';
 
 export const gmail: IApp = {
@@ -9,6 +8,5 @@ export const gmail: IApp = {
   description: 'connect to your Gmail account',
   icon: '/gmail.png',
   auth,
-  triggers,
-  actions,
+  actions: [sendEmail],
 };

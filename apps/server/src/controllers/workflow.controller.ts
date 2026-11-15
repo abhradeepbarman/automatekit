@@ -1,173 +1,228 @@
+import { SystemEvent } from '@repo/common/types';
+import { saveWorkflowStepsSchema } from '@repo/common/validators';
 import db from '@repo/db';
-import { workflows } from '@repo/db/schema';
-import { and, count, eq } from 'drizzle-orm';
+import { steps, workflows } from '@repo/db/schema';
+import { and, asc, desc, eq } from 'drizzle-orm';
 import { NextFunction, Request, Response } from 'express';
+import { envConfig } from '../config/env';
+import {
+  findOwnedWorkflow,
+  saveWorkflowGraph,
+  startExecution,
+} from '../services';
 import { asyncHandler, CustomErrorHandler, ResponseHandler } from '../utils';
+
+const getWorkflowDetails = async (id: string) => {
+  const workflow = await db.query.workflows.findFirst({
+    where: eq(workflows.id, id),
+    with: {
+      steps: { orderBy: asc(steps.index), with: { webhook: true } },
+      edges: { columns: { sourceStepId: true, targetStepId: true } },
+    },
+  });
+  if (!workflow) return null;
+
+  return {
+    ...workflow,
+    steps: workflow.steps.map(({ webhook, ...step }) => ({
+      ...step,
+      webhook: webhook && {
+        method: webhook.method,
+        url: `${envConfig.API_URL}/api/v1/webhook/${webhook.path}`,
+      },
+    })),
+    edges: workflow.edges.map((edge) => ({
+      source: edge.sourceStepId,
+      target: edge.targetStepId,
+    })),
+  };
+};
 
 export const createWorkflow = asyncHandler(
   async (req: Request, res: Response, next: NextFunction) => {
-    const body = req.body;
-    const { id } = req.user;
-
-    const [newWorkflow] = await db
+    const [workflow] = await db
       .insert(workflows)
-      .values({
-        name: body?.name,
-        userId: id,
-      })
+      .values({ name: req.body?.name, userId: req.user.id })
       .returning();
 
-    if (!newWorkflow) {
-      return next(CustomErrorHandler.serverError());
-    }
+    if (!workflow) return next(CustomErrorHandler.serverError());
 
     return res
       .status(201)
-      .send(ResponseHandler(201, 'Workflow created', newWorkflow));
-  },
-);
-
-export const updateWorkflow = asyncHandler(
-  async (req: Request, res: Response, next: NextFunction) => {
-    const { id } = req.params;
-    const { id: userId } = req.user;
-    const { name, isActive } = req.body;
-
-    if (!name && isActive === undefined) {
-      return next(CustomErrorHandler.badRequest());
-    }
-
-    const workflowDetails = await db.query.workflows.findFirst({
-      where: and(eq(workflows.id, id as string), eq(workflows.userId, userId)),
-      with: {
-        steps: true,
-      },
-    });
-
-    if (!workflowDetails) {
-      return next(CustomErrorHandler.notFound('Workflow not found'));
-    }
-
-    if (workflowDetails.userId !== userId) {
-      return next(CustomErrorHandler.notAllowed());
-    }
-
-    if (isActive && workflowDetails.steps.length < 2) {
-      return next(
-        CustomErrorHandler.badRequest(
-          'Workflow must have atleast a trigger & action',
-        ),
-      );
-    }
-
-    const [updatedWorkflow] = await db
-      .update(workflows)
-      .set({
-        name: name ?? workflowDetails.name,
-        isActive: isActive ?? workflowDetails.isActive,
-        activatedAt: isActive ? new Date() : undefined,
-        updatedAt: new Date(),
-      })
-      .where(eq(workflows.id, id as string))
-      .returning();
-
-    return res
-      .status(200)
-      .send(ResponseHandler(200, 'Workflow updated', updatedWorkflow));
-  },
-);
-
-export const deleteWorkflow = asyncHandler(
-  async (req: Request, res: Response, next: NextFunction) => {
-    const { id } = req.params;
-    const { id: userId } = req.user;
-
-    const workflowDetails = await db.query.workflows.findFirst({
-      where: and(eq(workflows.id, id as string), eq(workflows.userId, userId)),
-    });
-
-    if (!workflowDetails) {
-      return next(CustomErrorHandler.notFound('Workflow not found'));
-    }
-
-    if (workflowDetails.userId !== userId) {
-      return next(CustomErrorHandler.notAllowed());
-    }
-
-    const [deletedWorkflow] = await db
-      .delete(workflows)
-      .where(eq(workflows.id, id as string))
-      .returning();
-
-    return res
-      .status(200)
-      .send(ResponseHandler(200, 'Workflow deleted', deletedWorkflow));
+      .send(ResponseHandler(201, 'Workflow created', workflow));
   },
 );
 
 export const getWorkflow = asyncHandler(
   async (req: Request, res: Response, next: NextFunction) => {
-    const { id } = req.params;
-    const { id: userId } = req.user;
-
-    const workflowDetails = await db.query.workflows.findFirst({
-      where: and(eq(workflows.id, id as string), eq(workflows.userId, userId)),
-      with: {
-        steps: {
-          orderBy: (steps, { asc }) => [asc(steps.index)],
-        },
-      },
-    });
-
-    if (!workflowDetails) {
+    const workflow = await findOwnedWorkflow(
+      req.params.id as string,
+      req.user.id,
+    );
+    if (!workflow)
       return next(CustomErrorHandler.notFound('Workflow not found'));
-    }
-
-    if (workflowDetails.userId !== userId) {
-      return next(CustomErrorHandler.notAllowed());
-    }
 
     return res
       .status(200)
-      .send(ResponseHandler(200, 'Workflow details', workflowDetails));
+      .send(
+        ResponseHandler(
+          200,
+          'Workflow details',
+          await getWorkflowDetails(workflow.id),
+        ),
+      );
   },
 );
 
 export const getAllWorkflows = asyncHandler(
-  async (req: Request, res: Response, next: NextFunction) => {
-    const { id: userId } = req.user;
-    const page = Math.max(1, parseInt(req.query.page as string) || 1);
-    const limit = Math.min(
-      100,
-      Math.max(1, parseInt(req.query.limit as string) || 10),
-    );
-    const offset = (page - 1) * limit;
+  async (req: Request, res: Response) => {
+    const page = Math.max(1, Number(req.query.page) || 1);
+    const limit = Math.min(100, Math.max(1, Number(req.query.limit) || 10));
+    const where = eq(workflows.userId, req.user.id);
 
-    const [countRow] = await db
-      .select({ value: count() })
-      .from(workflows)
-      .where(eq(workflows.userId, userId));
-    const totalCount = countRow?.value ?? 0;
-
-    const allWorkflows = await db.query.workflows.findMany({
-      where: eq(workflows.userId, userId),
-      limit,
-      offset,
-      orderBy: (workflows, { desc }) => [desc(workflows.createdAt)],
-    });
-
-    const totalPages = Math.ceil(totalCount / limit);
+    const [total, items] = await Promise.all([
+      db.$count(workflows, where),
+      db.query.workflows.findMany({
+        where,
+        limit,
+        offset: (page - 1) * limit,
+        orderBy: desc(workflows.createdAt),
+      }),
+    ]);
 
     return res.status(200).send(
       ResponseHandler(200, 'Workflows details', {
-        workflows: allWorkflows,
+        workflows: items,
         pagination: {
           page,
           limit,
-          total: totalCount,
-          totalPages,
+          total,
+          totalPages: Math.ceil(total / limit),
         },
       }),
     );
+  },
+);
+
+export const updateWorkflow = asyncHandler(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const { name, isActive } = req.body;
+    if (!name && isActive === undefined)
+      return next(CustomErrorHandler.badRequest());
+
+    const workflow = await findOwnedWorkflow(
+      req.params.id as string,
+      req.user.id,
+    );
+    if (!workflow)
+      return next(CustomErrorHandler.notFound('Workflow not found'));
+
+    if (isActive) {
+      const stepCount = await db.$count(
+        steps,
+        eq(steps.workflowId, workflow.id),
+      );
+      if (stepCount < 2) {
+        return next(
+          CustomErrorHandler.badRequest(
+            'Add a trigger and at least one action first',
+          ),
+        );
+      }
+    }
+
+    const [updated] = await db
+      .update(workflows)
+      .set({
+        name: name ?? workflow.name,
+        isActive: isActive ?? workflow.isActive,
+        activatedAt: isActive ? new Date() : workflow.activatedAt,
+      })
+      .where(eq(workflows.id, workflow.id))
+      .returning();
+
+    return res
+      .status(200)
+      .send(ResponseHandler(200, 'Workflow updated', updated));
+  },
+);
+
+export const deleteWorkflow = asyncHandler(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const workflow = await findOwnedWorkflow(
+      req.params.id as string,
+      req.user.id,
+    );
+    if (!workflow)
+      return next(CustomErrorHandler.notFound('Workflow not found'));
+
+    await db.delete(workflows).where(eq(workflows.id, workflow.id));
+
+    return res
+      .status(200)
+      .send(ResponseHandler(200, 'Workflow deleted', workflow));
+  },
+);
+
+export const saveWorkflowSteps = asyncHandler(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const workflow = await findOwnedWorkflow(
+      req.params.id as string,
+      req.user.id,
+    );
+    if (!workflow) {
+      return next(CustomErrorHandler.notFound('Workflow not found'));
+    }
+
+    await saveWorkflowGraph(
+      workflow,
+      req.user.id,
+      saveWorkflowStepsSchema.parse(req.body),
+    );
+
+    return res
+      .status(200)
+      .send(
+        ResponseHandler(
+          200,
+          'Workflow saved',
+          await getWorkflowDetails(workflow.id),
+        ),
+      );
+  },
+);
+
+export const runWorkflow = asyncHandler(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const workflow = await findOwnedWorkflow(
+      req.params.id as string,
+      req.user.id,
+    );
+    if (!workflow)
+      return next(CustomErrorHandler.notFound('Workflow not found'));
+
+    const trigger = await db.query.steps.findFirst({
+      where: and(eq(steps.workflowId, workflow.id), eq(steps.index, 0)),
+    });
+    if (trigger?.eventName !== SystemEvent.TAP) {
+      return next(
+        CustomErrorHandler.badRequest('This workflow is not started by tap'),
+      );
+    }
+    if (!workflow.isActive) {
+      return next(
+        CustomErrorHandler.notAllowed('Activate the workflow to run it'),
+      );
+    }
+
+    const executionId = await startExecution(
+      trigger,
+      { tappedAt: new Date().toISOString() },
+      'Tapped',
+    );
+
+    return res
+      .status(200)
+      .send(ResponseHandler(200, 'Workflow started', { executionId }));
   },
 );

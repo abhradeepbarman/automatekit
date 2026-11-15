@@ -8,6 +8,7 @@ import {
   varchar,
 } from 'drizzle-orm/pg-core';
 import { executions } from './executions';
+import { stepEdges } from './step-edges';
 import { steps } from './steps';
 import { users } from './users';
 import { webhooks } from './webhooks';
@@ -40,6 +41,7 @@ export const workflowRelations = relations(workflows, ({ one, many }) => ({
     references: [users.id],
   }),
   steps: many(steps),
+  edges: many(stepEdges),
   executions: many(executions),
   webhooks: many(webhooks),
 }));

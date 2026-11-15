@@ -1,8 +1,2 @@
 export { default as logger } from './logger';
-export {
-  encryptSymmetric,
-  decryptSymmetric,
-  encryptJson,
-  decryptJson,
-  type EncryptedData,
-} from './encryption';
+export { encrypt, decrypt, type EncryptedData } from './encryption';

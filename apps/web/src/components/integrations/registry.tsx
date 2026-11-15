@@ -1,4 +1,5 @@
 import { Button } from '../ui/button';
+import SendMessageForm from './discord/send-message-form';
 import SendEmailForm from './gmail/send-email-form';
 import TimerForm from './system/timer-form';
 
@@ -17,6 +18,8 @@ export function EventConfigForm({
   switch (`${appId}:${eventId}`) {
     case 'gmail:send-email':
       return <SendEmailForm {...props} />;
+    case 'discord:send-message':
+      return <SendMessageForm {...props} />;
     case 'system:timer':
       return <TimerForm {...props} />;
     default:

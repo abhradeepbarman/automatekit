@@ -4,9 +4,7 @@
   "description": "",
   "main": "dist/index.js",
   "scripts": {
-    "build": "tsc",
-    "db:generate": "cross-env NODE_OPTIONS=--conditions=development drizzle-kit --config src/drizzle.config.ts generate",
-    "db:migrate": "cross-env NODE_OPTIONS=--conditions=development drizzle-kit --config src/drizzle.config.ts migrate"
+    "build": "tsc"
   },
   "keywords": [],
   "author": "",
@@ -15,9 +13,7 @@
     "@repo/eslint-config": "workspace:*",
     "@repo/typescript-config": "workspace:*",
     "@types/node": "^24.10.7",
-    "@types/pg": "^8.16.0",
-    "cross-env": "^10.1.0",
-    "drizzle-kit": "^0.31.8"
+    "@types/pg": "^8.16.0"
   },
   "dependencies": {
     "@repo/common": "workspace:*",

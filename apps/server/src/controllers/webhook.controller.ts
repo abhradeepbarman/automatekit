@@ -1,19 +1,9 @@
-import {
-  AppType,
-  ExecutionStatus,
-  StepType,
-  SystemEvent,
-} from '@repo/common/types';
+import { AppType, SystemEvent } from '@repo/common/types';
 import db from '@repo/db';
-import {
-  executionSteps,
-  executions,
-  webhooks,
-  workflows,
-} from '@repo/db/schema';
-import { actionQueue, actionQueueName } from '@repo/queue';
+import { webhooks, workflows } from '@repo/db/schema';
 import { eq, sql } from 'drizzle-orm';
 import { NextFunction, Request, Response } from 'express';
+import { startExecution } from '../services';
 import { asyncHandler, CustomErrorHandler, ResponseHandler } from '../utils';
 
 export const webhookListener = asyncHandler(
@@ -52,53 +42,24 @@ export const webhookListener = asyncHandler(
       input: req.method === 'GET' ? req.query : req.body,
     };
 
-    const execution = await db.transaction(async (tx) => {
-      const [created] = await tx
-        .insert(executions)
-        .values({
-          workflowId: workflowDetails.id,
-          status: ExecutionStatus.RUNNING,
-          triggerData,
-        })
-        .returning({ id: executions.id });
+    await db
+      .update(webhooks)
+      .set({
+        lastTriggeredAt: new Date(),
+        triggerCount: sql`${webhooks.triggerCount} + 1`,
+      })
+      .where(eq(webhooks.id, webhookDetails.id));
 
-      if (!created) throw new Error('Failed to create execution');
-
-      await tx.insert(executionSteps).values({
-        executionId: created.id,
-        stepId: webhookDetails.stepId,
-        stepIndex: 0,
-        stepType: StepType.TRIGGER,
+    await startExecution(
+      {
+        id: webhookDetails.stepId,
+        workflowId: workflowDetails.id,
         integration: AppType.SYSTEM,
         eventName: SystemEvent.WEBHOOK,
-        status: ExecutionStatus.COMPLETED,
-        output: triggerData,
-        message: 'Webhook received',
-        finishedAt: new Date(),
-      });
-
-      await tx
-        .update(workflows)
-        .set({ lastExecutedAt: new Date() })
-        .where(eq(workflows.id, workflowDetails.id));
-
-      await tx
-        .update(webhooks)
-        .set({
-          lastTriggeredAt: new Date(),
-          triggerCount: sql`${webhooks.triggerCount} + 1`,
-        })
-        .where(eq(webhooks.id, webhookDetails.id));
-
-      return created;
-    });
-
-    await actionQueue.add(actionQueueName, {
-      workflowId: workflowDetails.id,
-      executionId: execution.id,
-      stepIndex: 1,
-      dataAvailable: triggerData,
-    });
+      },
+      triggerData,
+      'Webhook received',
+    );
 
     return res
       .status(200)

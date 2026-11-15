@@ -7,7 +7,7 @@ Connect your apps, pick a trigger, and let workflows run themselves.
 ```bash
 pnpm install
 cp .env.example .env              # fill in the values
-pnpm --filter @repo/db db:migrate
+pnpm --filter server db:migrate
 pnpm dev
 ```
 

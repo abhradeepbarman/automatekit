@@ -1,31 +1,19 @@
 import { z } from 'zod';
 import { StepType } from '../types';
 
-export const addStepSchema = z
-  .object({
-    integration: z.string(),
-    eventName: z.string(),
-    metadata: z.any().optional(),
-    index: z.number(),
-    connectionId: z.string().optional(),
-    type: z.enum([StepType.TRIGGER, StepType.ACTION]),
-  })
-  .refine((data) => !(data.index === 0 && data.type !== StepType.TRIGGER), {
-    message: 'First step must be a trigger step',
-    path: ['type'],
-  })
-  .refine((data) => !(data.index > 0 && data.type !== StepType.ACTION), {
-    message: 'Steps after the first step must be action steps',
-    path: ['type'],
-  });
+export const saveWorkflowStepsSchema = z.object({
+  steps: z.array(
+    z.object({
+      id: z.uuid(),
+      type: z.enum(StepType),
+      integration: z.string().min(1),
+      eventName: z.string().min(1),
+      connectionId: z.uuid().nullish(),
+      config: z.record(z.string(), z.unknown()).default({}),
+      position: z.object({ x: z.number(), y: z.number() }),
+    }),
+  ),
+  edges: z.array(z.object({ source: z.uuid(), target: z.uuid() })),
+});
 
-export const updateStepSchema = z
-  .object({
-    integration: z.string().optional(),
-    metadata: z.any().optional(),
-    connectionId: z.string().optional(),
-  })
-  .refine((data) => Object.keys(data).length > 0, {
-    message: 'Nothing to update',
-    path: ['integration', 'metadata', 'connectionId'],
-  });
+export type SaveWorkflowSteps = z.infer<typeof saveWorkflowStepsSchema>;

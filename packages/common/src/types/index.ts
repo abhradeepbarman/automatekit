@@ -44,6 +44,7 @@ export enum AuthProvider {
 export enum AppType {
   SYSTEM = 'system',
   GMAIL = 'gmail',
+  DISCORD = 'discord',
   NOTION = 'notion',
 }
 
@@ -51,6 +52,7 @@ export enum AppType {
 export enum SystemEvent {
   TIMER = 'timer',
   WEBHOOK = 'webhook',
+  TAP = 'tap',
 }
 
 export interface ConnectionCredentials {

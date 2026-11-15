@@ -6,7 +6,7 @@ import {
   SystemEvent,
   TokenResponse,
 } from '@repo/common/types';
-import { decryptJson, encryptJson, logger } from '@repo/common/utils';
+import { decrypt, encrypt, logger } from '@repo/common/utils';
 import db from '@repo/db';
 import { connections, steps, workflows } from '@repo/db/schema';
 import apps from '@repo/integrations';
@@ -50,9 +50,7 @@ export async function getRefreshTokenAndUpdate(
     throw new Error('App has no auth');
   }
 
-  const credentials = decryptJson<ConnectionCredentials>(
-    connection.credentials,
-  );
+  const credentials = decrypt<ConnectionCredentials>(connection.credentials);
   if (!credentials.refreshToken) {
     throw new Error('Connection has no refresh token');
   }
@@ -62,7 +60,7 @@ export async function getRefreshTokenAndUpdate(
   await db
     .update(connections)
     .set({
-      credentials: encryptJson({
+      credentials: encrypt({
         ...credentials,
         accessToken: tokens.access_token,
         refreshToken: tokens.refresh_token ?? credentials.refreshToken,
@@ -116,7 +114,10 @@ export const triggerWorker = new Worker<TriggerJobData>(
         return;
       }
 
-      if (triggerDetails.eventName === SystemEvent.WEBHOOK) {
+      if (
+        triggerDetails.eventName === SystemEvent.WEBHOOK ||
+        triggerDetails.eventName === SystemEvent.TAP
+      ) {
         return;
       }
 
@@ -151,12 +152,11 @@ export const triggerWorker = new Worker<TriggerJobData>(
       const connection = triggerDetails.connection;
       let accessToken =
         app.auth && connection
-          ? (decryptJson<ConnectionCredentials>(connection.credentials)
+          ? (decrypt<ConnectionCredentials>(connection.credentials)
               .accessToken ?? '')
           : '';
 
-      const triggerMetadata =
-        (triggerDetails.metadata as any)?.data?.fields ?? {};
+      const triggerMetadata = triggerDetails.config;
       const lastExecutedAt =
         workflowDetails.lastExecutedAt ?? workflowDetails.activatedAt ?? null;
 

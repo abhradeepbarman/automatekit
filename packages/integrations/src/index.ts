@@ -1,12 +1,15 @@
 import { type IApp } from '@repo/common/types';
+import { discord } from './apps/discord';
 import { gmail } from './apps/gmail';
 import { system } from './apps/system';
 
-/**
- * All integration apps, including server-only `run`/`auth`. Server use only —
- * the browser uses the metadata API and `@repo/integrations/schemas` instead.
- */
-const apps: IApp[] = [gmail, system];
+const apps: IApp[] = [gmail, discord, system];
+
+export const getEventSchema = (appId: string, eventId: string) => {
+  const app = apps.find((a) => a.id === appId);
+  return [...(app?.triggers ?? []), ...(app?.actions ?? [])].find(
+    (event) => event.id === eventId,
+  )?.schema;
+};
 
 export default apps;
-export { isIntervalPassed } from './lib/interval';

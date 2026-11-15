@@ -192,11 +192,7 @@
       #000 40%,
       transparent 100%
     );
-    mask-image: radial-gradient(
-      120% 80% at 50% 0%,
-      #000 40%,
-      transparent 100%
-    );
+    mask-image: radial-gradient(120% 80% at 50% 0%, #000 40%, transparent 100%);
   }
 }
 

@@ -1,3 +1,4 @@
+import axios from 'axios';
 import { z } from 'zod';
 import { type IAction } from '@repo/common/types';
 
@@ -7,11 +8,7 @@ export const sendEmailSchema = z.object({
   body: z.string().min(1, 'Body is required'),
 });
 
-export interface SendEmailMetadata {
-  to: string;
-  subject: string;
-  body: string;
-}
+export type SendEmailMetadata = z.infer<typeof sendEmailSchema>;
 
 const stripHeaderBreaks = (value: string) => value.replace(/[\r\n]+/g, ' ');
 
@@ -38,7 +35,6 @@ export const sendEmail: IAction<SendEmailMetadata, SendEmailDataAvailable> = {
 
   run: async ({ metadata, accessToken }) => {
     try {
-      const axios = (await import('axios')).default;
       const to = stripHeaderBreaks(metadata.to);
       const subject = metadata.subject;
       const body = metadata.body;
@@ -89,7 +85,6 @@ export const sendEmail: IAction<SendEmailMetadata, SendEmailDataAvailable> = {
           ? `Error sending email: ${providerMessage}`
           : 'Error sending email',
         statusCode,
-        error,
       };
     }
   },

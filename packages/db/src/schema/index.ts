@@ -3,6 +3,7 @@ export * from './users';
 export * from './password-reset-tokens';
 export * from './workflows';
 export * from './steps';
+export * from './step-edges';
 export * from './connections';
 export * from './webhooks';
 export * from './executions';

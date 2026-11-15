@@ -5,7 +5,7 @@ import { asyncHandler, CustomErrorHandler, ResponseHandler } from '../utils';
 import db from '@repo/db';
 import { connections } from '@repo/db/schema';
 import type { ConnectionCredentials } from '@repo/common/types';
-import { encryptJson } from '@repo/common/utils';
+import { encrypt } from '@repo/common/utils';
 import { envConfig } from '../config/env';
 
 export const getAuthUrl = asyncHandler(
@@ -135,7 +135,7 @@ export const getTokenUrl = asyncHandler(
         userId: req.user.id,
         integration: appDetails.id,
         name: name ? `${name}(${email})` : email,
-        credentials: encryptJson(credentials),
+        credentials: encrypt(credentials),
         expiresAt: expires_in ? new Date(Date.now() + expires_in * 1000) : null,
       })
       .returning();

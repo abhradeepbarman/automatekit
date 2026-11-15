@@ -4,4 +4,7 @@ export {
   forgotPasswordSchema,
   resetPasswordSchema,
 } from './auth.validators';
-export { addStepSchema, updateStepSchema } from './step.validator';
+export {
+  saveWorkflowStepsSchema,
+  type SaveWorkflowSteps,
+} from './workflow.validator';

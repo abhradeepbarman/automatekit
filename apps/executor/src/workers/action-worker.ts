@@ -4,7 +4,7 @@ import {
   StepType,
   type IApp,
 } from '@repo/common/types';
-import { decryptJson, logger } from '@repo/common/utils';
+import { decrypt, logger } from '@repo/common/utils';
 import db from '@repo/db';
 import { connections, steps, workflows } from '@repo/db/schema';
 import apps from '@repo/integrations';
@@ -57,7 +57,7 @@ export const actionWorker = new Worker<ActionJobData>(
       return;
     }
 
-    const rawFields = (stepDetails.metadata as any)?.data?.fields ?? {};
+    const rawFields = stepDetails.config;
     const input = replaceVariables(rawFields, dataAvailable);
     const executionStepId = await startExecutionStep(
       executionId,
@@ -95,8 +95,8 @@ export const actionWorker = new Worker<ActionJobData>(
       }
 
       accessToken =
-        decryptJson<ConnectionCredentials>(connection.credentials)
-          .accessToken ?? '';
+        decrypt<ConnectionCredentials>(connection.credentials).accessToken ??
+        '';
     }
 
     let result = await action.run({ metadata: input, accessToken });
