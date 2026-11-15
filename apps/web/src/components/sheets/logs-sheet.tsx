@@ -136,7 +136,7 @@ const LogsSheet = ({ open, onOpenChange }: ILogsSheetProps) => {
               </div>
               <div>
                 <SheetTitle className="text-base leading-tight">
-                  Execution Logs
+                  Executions
                 </SheetTitle>
                 <SheetDescription className="text-xs mt-0.5">
                   History of your workflow runs
@@ -165,7 +165,9 @@ const LogsSheet = ({ open, onOpenChange }: ILogsSheetProps) => {
           {isLoading ? (
             <div className="flex flex-col items-center justify-center h-full gap-3 py-20">
               <Loader2 className="h-7 w-7 animate-spin text-primary/60" />
-              <p className="text-sm text-muted-foreground">Loading logs…</p>
+              <p className="text-sm text-muted-foreground">
+                Loading executions…
+              </p>
             </div>
           ) : isError ? (
             <div className="flex flex-col items-center justify-center h-full gap-3 py-20">
@@ -173,7 +175,7 @@ const LogsSheet = ({ open, onOpenChange }: ILogsSheetProps) => {
                 <AlertCircle className="h-6 w-6 text-red-500" />
               </div>
               <div className="text-center">
-                <p className="text-sm font-medium">Failed to load logs</p>
+                <p className="text-sm font-medium">Failed to load executions</p>
                 <p className="text-xs text-muted-foreground mt-1">
                   Please try closing and reopening this panel
                 </p>
@@ -187,7 +189,7 @@ const LogsSheet = ({ open, onOpenChange }: ILogsSheetProps) => {
               <div className="text-center">
                 <p className="text-sm font-medium">No runs yet</p>
                 <p className="text-xs text-muted-foreground mt-1">
-                  Logs will appear here once your workflow runs
+                  Executions will appear here once your workflow runs
                 </p>
               </div>
             </div>

@@ -63,7 +63,7 @@ export default function WorkflowTitle({
 
   if (isEditing) {
     return (
-      <div className="flex items-center gap-1 rounded-md border bg-background/80 p-1 backdrop-blur-sm">
+      <div className="flex items-center gap-1">
         <Input
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
@@ -103,7 +103,7 @@ export default function WorkflowTitle({
   }
 
   return (
-    <div className="flex max-w-md items-center gap-1 rounded-md border bg-background/80 py-1 pl-3 pr-1 backdrop-blur-sm">
+    <div className="flex min-w-0 items-center gap-1 pl-2">
       <h1 className="truncate text-sm font-medium">{name}</h1>
       <Button
         size="sm"

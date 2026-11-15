@@ -234,24 +234,22 @@ export default function Workflow() {
       </div>
 
       {data && (
-        <div className="absolute top-4 left-1/2 z-10 -translate-x-1/2">
+        <div className="absolute top-4 left-1/2 z-10 flex max-w-md -translate-x-1/2 items-center gap-2 rounded-md border bg-background/80 p-1 pr-3 backdrop-blur-sm">
           <WorkflowTitle workflowId={data.id} name={data.name} />
+          <span className="h-5 w-px shrink-0 bg-border" />
+          <Switch
+            title={data.isActive ? 'Deactivate workflow' : 'Activate workflow'}
+            aria-label={
+              data.isActive ? 'Deactivate workflow' : 'Activate workflow'
+            }
+            checked={data.isActive}
+            onCheckedChange={toggleWorkflowStatus}
+            disabled={isStatusPending}
+          />
         </div>
       )}
 
-      <div className="absolute top-4 right-4 z-10 flex items-center gap-4">
-        {data && (
-          <div className="flex items-center gap-2 bg-background/80 backdrop-blur-sm px-3 py-1.5 rounded-md border text-sm">
-            <span className="text-muted-foreground mr-1">
-              {data.isActive ? 'Active' : 'Inactive'}
-            </span>
-            <Switch
-              checked={data.isActive}
-              onCheckedChange={toggleWorkflowStatus}
-              disabled={isStatusPending}
-            />
-          </div>
-        )}
+      <div className="absolute top-4 right-4 z-10">
         <Button
           variant="outline"
           size="sm"
@@ -259,7 +257,7 @@ export default function Workflow() {
           className="flex items-center gap-2"
         >
           <FileText className="h-4 w-4" />
-          Execution Logs
+          Executions
         </Button>
       </div>
 
