@@ -1,5 +1,5 @@
 import { Button } from '@/components/ui/button';
-import config from '@/config';
+import config from '@/config/env';
 
 const GoogleIcon = () => (
   <svg className="h-4 w-4" viewBox="0 0 24 24" aria-hidden="true">

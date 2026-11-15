@@ -1,4 +1,4 @@
-import config from '@/config';
+import config from '@/config/env';
 import axios from 'axios';
 
 const axiosInstance = axios.create({

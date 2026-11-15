@@ -1,4 +1,4 @@
-import config from '@/config';
+import config from '@/config/env';
 import credentialService from '@/services/credential.service';
 import { useQuery } from '@tanstack/react-query';
 import { Plus } from 'lucide-react';
