@@ -1,11 +1,16 @@
 import { logger } from '@repo/common/utils';
 import { Queue } from 'bullmq';
-import 'dotenv/config';
-import { defaultJobOptions, redisConnection } from './connection';
+import { redisConnection } from '../connection';
+import { defaultJobOptions } from '../job-options';
+
+export interface TriggerJobData {
+  workflowId: string;
+  input?: unknown;
+}
 
 export const triggerQueueName = 'trigger-checker';
 
-export const triggerQueue = new Queue(triggerQueueName, {
+export const triggerQueue = new Queue<TriggerJobData>(triggerQueueName, {
   connection: redisConnection(),
   defaultJobOptions: {
     ...defaultJobOptions,

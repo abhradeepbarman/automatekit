@@ -3,19 +3,16 @@ import { ExecutionStatus, StepType, type IApp } from '@repo/common/types';
 import { decryptSymmetric, logger } from '@repo/common/utils';
 import db from '@repo/db';
 import { connections, steps, workflows } from '@repo/db/schema';
-import { actionQueue, actionQueueName, redisConnection } from '@repo/queue';
+import {
+  actionQueue,
+  actionQueueName,
+  redisConnection,
+  type ActionJobData,
+} from '@repo/queue';
 import { Job, Worker } from 'bullmq';
 import { and, eq } from 'drizzle-orm';
-import config from '../config';
 import { createExecutionLog, replaceVariables } from '../helpers';
 import { getRefreshTokenAndUpdate } from './trigger-worker';
-
-export interface ActionJobData {
-  stepIndex: number;
-  workflowId: string;
-  jobId: string;
-  dataAvailable: any;
-}
 
 export const actionWorker = new Worker<ActionJobData>(
   actionQueueName,
@@ -219,7 +216,6 @@ export const actionWorker = new Worker<ActionJobData>(
   },
   {
     connection: redisConnection(),
-    concurrency: config.WORKER_CONCURRENCY,
   },
 );
 

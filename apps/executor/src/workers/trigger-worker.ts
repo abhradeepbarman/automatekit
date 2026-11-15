@@ -14,17 +14,12 @@ import {
   actionQueueName,
   redisConnection,
   triggerQueueName,
+  type TriggerJobData,
 } from '@repo/queue';
 import { Job, Worker } from 'bullmq';
 import { randomUUID } from 'crypto';
 import { eq } from 'drizzle-orm';
-import config from '../config';
 import { createExecutionLog } from '../helpers';
-
-interface TriggerJobData {
-  workflowId: string;
-  input?: unknown;
-}
 
 function hasValidAuth(app: IApp, triggerDetails: any): boolean {
   if (!app.auth) {
@@ -296,7 +291,6 @@ export const triggerWorker = new Worker<TriggerJobData>(
   },
   {
     connection: redisConnection(),
-    concurrency: config.WORKER_CONCURRENCY,
   },
 );
 
