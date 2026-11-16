@@ -13,20 +13,12 @@ const encodeHeaderValue = (value: string) => {
   return `=?UTF-8?B?${Buffer.from(clean, 'utf8').toString('base64')}?=`;
 };
 
-const sendEmailDataAvailable = [
-  { key: 'receiverEmail', label: 'Receiver Email', type: 'string' },
-  { key: 'subject', label: 'Subject', type: 'string' },
-  { key: 'body', label: 'Body', type: 'string' },
-] as const;
-type SendEmailDataAvailable = typeof sendEmailDataAvailable;
-
-export const sendEmail: IAction<SendEmailMetadata, SendEmailDataAvailable> = {
+export const sendEmail: IAction<SendEmailMetadata> = {
   id: 'send-email',
   name: 'Send Email',
   description: 'Send an email via Gmail',
 
   schema: sendEmailSchema,
-  dataAvailable: sendEmailDataAvailable,
 
   run: async ({ metadata, accessToken }) => {
     try {

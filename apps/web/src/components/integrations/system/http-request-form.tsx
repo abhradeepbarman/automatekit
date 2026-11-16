@@ -136,7 +136,7 @@ const HttpRequestForm = ({
             <Field>
               <FieldLabel>Body</FieldLabel>
               <Textarea
-                placeholder='{"name": "{{body.name}}"}'
+                placeholder='{"name": "value"}'
                 className="min-h-28 font-mono text-xs"
                 {...field}
               />

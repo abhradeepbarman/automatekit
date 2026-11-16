@@ -1,9 +1,8 @@
 import 'dotenv/config';
 import { logger } from '@repo/common/utils';
 import { actionQueue, triggerQueue } from '@repo/queue';
-import { startTriggerChecker } from './trigger-checker';
-import { actionWorker } from './workers/action-worker';
-import { triggerWorker } from './workers/trigger-worker';
+import { startTriggerChecker } from './cron/trigger-checker';
+import { actionWorker, triggerWorker } from './workers';
 
 const triggerChecker = startTriggerChecker();
 

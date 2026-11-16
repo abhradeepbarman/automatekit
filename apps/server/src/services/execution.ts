@@ -53,7 +53,6 @@ export const startExecution = async (
     workflowId: trigger.workflowId,
     executionId: execution.id,
     stepIndex: 1,
-    dataAvailable: triggerData,
   });
 
   return execution.id;

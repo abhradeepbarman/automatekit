@@ -83,63 +83,29 @@ export interface IApp {
   };
 }
 
-export type FieldTypeMap = {
-  string: string;
-  number: number;
-  boolean: boolean;
-  date: Date;
-  object: Record<string, any>;
-};
-
-export interface IDataField<
-  K extends string = string,
-  T extends keyof FieldTypeMap = keyof FieldTypeMap,
-> {
-  key: K;
-  label: string;
-  type: T;
-}
-
-export type SchemaToData<T extends readonly IDataField[]> = {
-  [K in T[number] as K['key']]: FieldTypeMap[K['type']];
-};
-
-export interface ITrigger<
-  TMeta = any,
-  TSchema extends readonly IDataField[] = readonly IDataField[],
-> {
+export interface ITrigger<TMeta = any> {
   id: string;
   name: string;
   description: string;
   icon?: string;
   schema?: z.ZodType;
-  dataAvailable?: TSchema;
   run: (params: {
     metadata: TMeta;
     lastExecutedAt: Date;
     accessToken?: string;
-  }) =>
-    | Promise<ReturnResponse<SchemaToData<TSchema>>>
-    | ReturnResponse<SchemaToData<TSchema>>;
+  }) => Promise<ReturnResponse> | ReturnResponse;
 }
 
-export interface IAction<
-  TMeta = any,
-  TSchema extends readonly IDataField[] = readonly IDataField[],
-> {
+export interface IAction<TMeta = any> {
   id: string;
   name: string;
   description: string;
   icon?: string;
   schema?: z.ZodType;
-  dataAvailable?: TSchema;
   run: (params: {
     metadata: TMeta;
     accessToken?: string;
-  }) => Promise<
-    | ReturnResponse<SchemaToData<TSchema>>
-    | ReturnResponse<SchemaToData<TSchema>>
-  >;
+  }) => Promise<ReturnResponse>;
 }
 
 export enum PollingInterval {

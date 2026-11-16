@@ -1,6 +1,5 @@
 import { HttpMethod, PollingInterval } from '@repo/common/types';
 import { z } from 'zod';
-import { orTemplate } from '../../lib/template';
 
 export const timerSchema = z.object({
   intervalMs: z.enum(PollingInterval, 'Select an interval'),
@@ -23,10 +22,7 @@ export const webhookSchema = z
 
 export const httpRequestSchema = z.object({
   method: z.enum(HttpMethod),
-  url: orTemplate(
-    z.url({ protocol: /^https?$/ }),
-    'Enter an http(s) URL or a {{variable}}',
-  ),
+  url: z.url({ protocol: /^https?$/, error: 'Enter a valid http(s) URL' }),
   headers: z.array(
     z.object({
       key: z

@@ -1,17 +1,10 @@
 import axiosInstance from '@/lib/axios';
 
-export interface IntegrationDataField {
-  key: string;
-  label: string;
-  type: string;
-}
-
 export interface IntegrationEvent {
   id: string;
   name: string;
   description: string;
   icon?: string;
-  dataAvailable: IntegrationDataField[];
 }
 
 export interface Integration {

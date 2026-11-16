@@ -3,18 +3,11 @@ import apps from '@repo/integrations';
 import { NextFunction, Request, Response } from 'express';
 import { asyncHandler, ResponseHandler } from '../utils';
 
-const toEvent = ({
+const toEvent = ({ id, name, description, icon }: ITrigger | IAction) => ({
   id,
   name,
   description,
   icon,
-  dataAvailable,
-}: ITrigger | IAction) => ({
-  id,
-  name,
-  description,
-  icon,
-  dataAvailable: dataAvailable ?? [],
 });
 
 export const getIntegrations = asyncHandler(

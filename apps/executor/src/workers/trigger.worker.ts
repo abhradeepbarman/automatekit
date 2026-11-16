@@ -1,14 +1,12 @@
 import {
-  ConnectionCredentials,
   ExecutionStatus,
   IApp,
   StepType,
   SystemEvent,
-  TokenResponse,
 } from '@repo/common/types';
-import { decrypt, encrypt, logger } from '@repo/common/utils';
+import { logger } from '@repo/common/utils';
 import db from '@repo/db';
-import { connections, steps, workflows } from '@repo/db/schema';
+import { steps, workflows } from '@repo/db/schema';
 import apps from '@repo/integrations';
 import {
   actionQueue,
@@ -23,8 +21,10 @@ import {
   createExecution,
   failExecution,
   finishExecutionStep,
+  getAccessToken,
+  refreshAccessToken,
   startExecutionStep,
-} from '../helpers';
+} from '../services';
 
 function hasValidAuth(
   app: IApp,
@@ -32,46 +32,6 @@ function hasValidAuth(
 ): boolean {
   if (!app.auth) return true;
   return Boolean(connection);
-}
-
-export async function getRefreshTokenAndUpdate(
-  connectionId: string,
-  app: IApp,
-): Promise<TokenResponse> {
-  const connection = await db.query.connections.findFirst({
-    where: eq(connections.id, connectionId),
-  });
-
-  if (!connection) {
-    throw new Error('Connection not found');
-  }
-
-  if (!app.auth) {
-    throw new Error('App has no auth');
-  }
-
-  const credentials = decrypt<ConnectionCredentials>(connection.credentials);
-  if (!credentials.refreshToken) {
-    throw new Error('Connection has no refresh token');
-  }
-
-  const tokens = await app.auth.refreshAccessToken(credentials.refreshToken);
-
-  await db
-    .update(connections)
-    .set({
-      credentials: encrypt({
-        ...credentials,
-        accessToken: tokens.access_token,
-        refreshToken: tokens.refresh_token ?? credentials.refreshToken,
-      }),
-      expiresAt: tokens.expires_in
-        ? new Date(Date.now() + tokens.expires_in * 1000)
-        : null,
-    })
-    .where(eq(connections.id, connectionId));
-
-  return tokens;
 }
 
 export const triggerWorker = new Worker<TriggerJobData>(
@@ -151,10 +111,7 @@ export const triggerWorker = new Worker<TriggerJobData>(
 
       const connection = triggerDetails.connection;
       let accessToken =
-        app.auth && connection
-          ? (decrypt<ConnectionCredentials>(connection.credentials)
-              .accessToken ?? '')
-          : '';
+        app.auth && connection ? getAccessToken(connection) : '';
 
       const triggerMetadata = triggerDetails.config;
       const lastExecutedAt =
@@ -175,7 +132,7 @@ export const triggerWorker = new Worker<TriggerJobData>(
       if (!result.success && result.statusCode === 401 && connection) {
         logger.info('Refreshing token');
         try {
-          const tokens = await getRefreshTokenAndUpdate(connection.id, app);
+          const tokens = await refreshAccessToken(connection.id, app);
           accessToken = tokens.access_token;
           result = await runTrigger();
         } catch (refreshError) {
@@ -217,7 +174,6 @@ export const triggerWorker = new Worker<TriggerJobData>(
         workflowId,
         executionId,
         stepIndex: 1,
-        dataAvailable: result.data,
       });
     } catch (error) {
       logger.error('Trigger worker error: ' + error);

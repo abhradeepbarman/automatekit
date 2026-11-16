@@ -7,11 +7,6 @@ export const webhook: ITrigger<WebhookConfig> = {
   description: 'Triggered when your webhook URL receives a request',
   icon: '/icons/webhook.svg',
   schema: webhookSchema,
-  dataAvailable: [
-    { key: 'body', label: 'Body', type: 'object' },
-    { key: 'query', label: 'Query parameters', type: 'object' },
-    { key: 'headers', label: 'Headers', type: 'object' },
-  ],
 
   run: () => ({ success: true, message: 'Webhook triggered', statusCode: 200 }),
 };

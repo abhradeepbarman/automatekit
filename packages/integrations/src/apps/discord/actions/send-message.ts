@@ -5,23 +5,12 @@ import { sendMessageSchema } from '../schemas';
 
 export type SendMessageMetadata = z.infer<typeof sendMessageSchema>;
 
-const sendMessageDataAvailable = [
-  { key: 'messageId', label: 'Message ID', type: 'string' },
-  { key: 'channelId', label: 'Channel ID', type: 'string' },
-  { key: 'content', label: 'Message', type: 'string' },
-] as const;
-type SendMessageDataAvailable = typeof sendMessageDataAvailable;
-
-export const sendMessage: IAction<
-  SendMessageMetadata,
-  SendMessageDataAvailable
-> = {
+export const sendMessage: IAction<SendMessageMetadata> = {
   id: 'send-message',
   name: 'Send Message',
   description: 'Send a message to a Discord channel',
 
   schema: sendMessageSchema,
-  dataAvailable: sendMessageDataAvailable,
 
   run: async ({ metadata }) => {
     const parsed = sendMessageSchema.safeParse(metadata);

@@ -1,6 +1,5 @@
 import ConnectBtn from '@/components/common/connect-btn';
 import { EventConfigForm } from '@/components/integrations/registry';
-import { Badge } from '@/components/ui/badge';
 import { Field, FieldError, FieldLabel } from '@/components/ui/field';
 import {
   Select,
@@ -18,17 +17,14 @@ import {
 } from '@/components/ui/sheet';
 import type { StepData } from '@/components/workflow/editor-context';
 import { useIntegrations } from '@/hooks/use-integrations';
-import type { IntegrationDataField } from '@/services/integration.service';
 import { StepType } from '@repo/common/types';
 import { useState } from 'react';
-import { toast } from 'sonner';
 
 interface StepSheetProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   type: StepType;
   initial?: StepData;
-  dataAvailable?: IntegrationDataField[];
   onSubmit: (step: StepData) => void;
 }
 
@@ -63,7 +59,6 @@ const StepForm = ({
   type,
   label,
   initial,
-  dataAvailable,
   onSubmit,
 }: Omit<StepSheetProps, 'open' | 'onOpenChange'> & { label: string }) => {
   const { data: integrations } = useIntegrations();
@@ -157,28 +152,6 @@ const StepForm = ({
           />
           {error && <FieldError errors={[{ message: error }]} />}
         </Field>
-      )}
-
-      {eventName && !!dataAvailable?.length && (
-        <div className="space-y-3">
-          <p className="text-sm font-medium">Data from previous step</p>
-          <div className="flex flex-wrap gap-2">
-            {dataAvailable.map((field) => (
-              <Badge
-                key={field.key}
-                variant="secondary"
-                className="cursor-pointer"
-                title={`Copy {{${field.key}}}`}
-                onClick={() => {
-                  navigator.clipboard.writeText(`{{${field.key}}}`);
-                  toast.success(`Copied {{${field.key}}}`);
-                }}
-              >
-                {field.label}
-              </Badge>
-            ))}
-          </div>
-        </div>
       )}
 
       {eventName && (

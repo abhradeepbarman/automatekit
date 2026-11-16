@@ -7,8 +7,6 @@ export interface ActionJobData {
   workflowId: string;
   stepIndex: number;
   executionId: string;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  dataAvailable: any;
 }
 
 export const actionQueueName = 'action-execution';

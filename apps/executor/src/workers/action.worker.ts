@@ -1,10 +1,5 @@
-import {
-  ConnectionCredentials,
-  ExecutionStatus,
-  StepType,
-  type IApp,
-} from '@repo/common/types';
-import { decrypt, logger } from '@repo/common/utils';
+import { ExecutionStatus, StepType, type IApp } from '@repo/common/types';
+import { logger } from '@repo/common/utils';
 import db from '@repo/db';
 import { connections, steps, workflows } from '@repo/db/schema';
 import apps from '@repo/integrations';
@@ -20,15 +15,15 @@ import {
   failExecution,
   finishExecution,
   finishExecutionStep,
-  replaceVariables,
+  getAccessToken,
+  refreshAccessToken,
   startExecutionStep,
-} from '../helpers';
-import { getRefreshTokenAndUpdate } from './trigger-worker';
+} from '../services';
 
 export const actionWorker = new Worker<ActionJobData>(
   actionQueueName,
   async (job: Job<ActionJobData>) => {
-    const { stepIndex, executionId, workflowId, dataAvailable } = job.data;
+    const { stepIndex, executionId, workflowId } = job.data;
 
     const workflowDetails = await db.query.workflows.findFirst({
       where: eq(workflows.id, workflowId),
@@ -57,8 +52,7 @@ export const actionWorker = new Worker<ActionJobData>(
       return;
     }
 
-    const rawFields = stepDetails.config;
-    const input = replaceVariables(rawFields, dataAvailable);
+    const input = stepDetails.config;
     const executionStepId = await startExecutionStep(
       executionId,
       stepDetails,
@@ -94,9 +88,7 @@ export const actionWorker = new Worker<ActionJobData>(
         return fail('Connected account no longer exists');
       }
 
-      accessToken =
-        decrypt<ConnectionCredentials>(connection.credentials).accessToken ??
-        '';
+      accessToken = getAccessToken(connection);
     }
 
     let result = await action.run({ metadata: input, accessToken });
@@ -107,10 +99,7 @@ export const actionWorker = new Worker<ActionJobData>(
       stepDetails.connectionId
     ) {
       try {
-        const tokens = await getRefreshTokenAndUpdate(
-          stepDetails.connectionId,
-          app,
-        );
+        const tokens = await refreshAccessToken(stepDetails.connectionId, app);
         result = await action.run({
           metadata: input,
           accessToken: tokens.access_token,
@@ -136,7 +125,6 @@ export const actionWorker = new Worker<ActionJobData>(
       workflowId,
       executionId,
       stepIndex: stepIndex + 1,
-      dataAvailable: result.data,
     });
   },
   {

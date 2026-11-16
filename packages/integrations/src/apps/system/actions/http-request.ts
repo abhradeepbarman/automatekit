@@ -18,11 +18,6 @@ export const httpRequest: IAction<HttpRequestConfig> = {
   description: 'Send a request to any URL',
   icon: '/icons/http-request.svg',
   schema: httpRequestSchema,
-  dataAvailable: [
-    { key: 'status', label: 'Status code', type: 'number' },
-    { key: 'body', label: 'Response body', type: 'object' },
-    { key: 'headers', label: 'Response headers', type: 'object' },
-  ],
 
   run: async ({ metadata }) => {
     const parsed = httpRequestSchema.safeParse(metadata);

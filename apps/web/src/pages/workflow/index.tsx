@@ -8,7 +8,6 @@ import {
   type StepData,
 } from '@/components/workflow/editor-context';
 import WorkflowTitle from '@/components/workflow/workflow-title';
-import { useFindEvent } from '@/hooks/use-integrations';
 import workflowService, {
   type IExecution,
   type IWorkflowDetails,
@@ -90,7 +89,6 @@ export default function Workflow() {
   const navigate = useNavigate();
   const { id: workflowId } = useParams() as { id: string };
   const queryClient = useQueryClient();
-  const findEvent = useFindEvent();
 
   const [nodes, setNodes] = useState<StepNodeType[]>([]);
   const [edges, setEdges] = useState<Edge[]>([]);
@@ -181,14 +179,6 @@ export default function Workflow() {
 
   const findNode = (id: string) => nodes.find((node) => node.id === id);
 
-  const getDataAvailable = (stepId?: string) => {
-    const step = stepId && findNode(stepId);
-    return step
-      ? findEvent(step.data.integration, step.data.type, step.data.eventName)
-          .event?.dataAvailable
-      : undefined;
-  };
-
   const saveStep = (data: StepData) => {
     setIsDirty(true);
 
@@ -254,10 +244,6 @@ export default function Workflow() {
   );
 
   const editing = sheet?.mode === 'edit' ? findNode(sheet.stepId) : undefined;
-  const parentId =
-    sheet?.mode === 'add-action'
-      ? sheet.sourceId
-      : editing && edges.find((e) => e.target === editing.id)?.source;
   const canActivate = workflow ? workflow.steps.length >= 2 : false;
   const switchHint = isDirty
     ? 'Save your changes first'
@@ -398,7 +384,6 @@ export default function Workflow() {
               : StepType.ACTION
           }
           initial={editing?.data}
-          dataAvailable={getDataAvailable(parentId)}
           onSubmit={saveStep}
         />
 
