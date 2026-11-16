@@ -1,147 +1,93 @@
-import { ExecutionStatus, StepType, type IApp } from '@repo/common/types';
+import { ExecutionStatus, StepType } from '@repo/common/types';
 import { logger } from '@repo/common/utils';
 import db from '@repo/db';
-import { connections, steps, workflows } from '@repo/db/schema';
+import { steps, workflows } from '@repo/db/schema';
 import apps from '@repo/integrations';
-import {
-  actionQueue,
-  actionQueueName,
-  redisConnection,
-  type ActionJobData,
-} from '@repo/queue';
-import { Job, Worker } from 'bullmq';
+import { actionQueue, actionQueueName, type ActionJobData } from '@repo/queue';
+import type { Job } from 'bullmq';
 import { and, eq } from 'drizzle-orm';
 import {
   failExecution,
   finishExecution,
   finishExecutionStep,
-  getAccessToken,
-  refreshAccessToken,
+  runWithAuth,
   startExecutionStep,
 } from '../services';
+import { createWorker } from '../utils';
 
-export const actionWorker = new Worker<ActionJobData>(
+const processActionJob = async (job: Job<ActionJobData>) => {
+  const { workflowId, executionId, stepIndex } = job.data;
+
+  const workflow = await db.query.workflows.findFirst({
+    where: eq(workflows.id, workflowId),
+  });
+  if (!workflow) {
+    logger.error(`Workflow ${workflowId} not found`);
+    return;
+  }
+
+  if (!workflow.isActive) {
+    await finishExecution(
+      executionId,
+      ExecutionStatus.FAILED,
+      'Workflow was deactivated',
+    );
+    return;
+  }
+
+  const step = await db.query.steps.findFirst({
+    where: and(eq(steps.workflowId, workflowId), eq(steps.index, stepIndex)),
+    with: { connection: true },
+  });
+  if (!step) {
+    await finishExecution(executionId, ExecutionStatus.COMPLETED);
+    logger.info(`Execution ${executionId} completed`);
+    return;
+  }
+
+  const executionStepId = await startExecutionStep(
+    executionId,
+    step,
+    step.config,
+  );
+  const fail = (message: string) =>
+    failExecution(executionId, executionStepId, message);
+
+  const app = apps.find((app) => app.id === step.integration);
+  const action =
+    step.type === StepType.ACTION
+      ? app?.actions?.find((action) => action.id === step.eventName)
+      : undefined;
+  if (!app || !action) {
+    return fail(`Action ${step.integration}/${step.eventName} not found`);
+  }
+
+  if (app.auth && !step.connection) {
+    return fail('Step has no connected account');
+  }
+
+  const result = await runWithAuth(app, step.connection, (accessToken) =>
+    action.run({ metadata: step.config, accessToken }),
+  );
+  if (!result.success) {
+    return fail(result.message || `${action.name} failed`);
+  }
+
+  await finishExecutionStep(executionStepId, {
+    status: ExecutionStatus.COMPLETED,
+    message: result.message || `${action.name} completed`,
+    output: result.data,
+  });
+
+  await actionQueue.add(actionQueueName, {
+    workflowId,
+    executionId,
+    stepIndex: stepIndex + 1,
+  });
+};
+
+export const actionWorker = createWorker(
   actionQueueName,
-  async (job: Job<ActionJobData>) => {
-    const { stepIndex, executionId, workflowId } = job.data;
-
-    const workflowDetails = await db.query.workflows.findFirst({
-      where: eq(workflows.id, workflowId),
-    });
-    if (!workflowDetails) {
-      logger.error(`Workflow ${workflowId} not found`);
-      return;
-    }
-
-    if (!workflowDetails.isActive) {
-      await finishExecution(
-        executionId,
-        ExecutionStatus.FAILED,
-        'Workflow was deactivated',
-      );
-      return;
-    }
-
-    const stepDetails = await db.query.steps.findFirst({
-      where: and(eq(steps.index, stepIndex), eq(steps.workflowId, workflowId)),
-    });
-
-    if (!stepDetails) {
-      logger.info(`Workflow ${workflowId} run ${executionId} completed`);
-      await finishExecution(executionId, ExecutionStatus.COMPLETED);
-      return;
-    }
-
-    const input = stepDetails.config;
-    const executionStepId = await startExecutionStep(
-      executionId,
-      stepDetails,
-      input,
-    );
-    const fail = (message: string) =>
-      failExecution(executionId, executionStepId, message);
-
-    if (stepDetails.type !== StepType.ACTION) {
-      return fail(`Step ${stepIndex} is not an action step`);
-    }
-
-    const app: IApp | undefined = apps.find(
-      (a) => a.id === stepDetails.integration,
-    );
-    const action = app?.actions?.find((a) => a.id === stepDetails.eventName);
-    if (!app || !action) {
-      return fail(
-        `Action ${stepDetails.eventName} not found in ${stepDetails.integration}`,
-      );
-    }
-
-    let accessToken = '';
-    if (app.auth) {
-      if (!stepDetails.connectionId) {
-        return fail('Step has no connected account');
-      }
-
-      const connection = await db.query.connections.findFirst({
-        where: eq(connections.id, stepDetails.connectionId),
-      });
-      if (!connection) {
-        return fail('Connected account no longer exists');
-      }
-
-      accessToken = getAccessToken(connection);
-    }
-
-    let result = await action.run({ metadata: input, accessToken });
-
-    if (
-      !result.success &&
-      result.statusCode === 401 &&
-      stepDetails.connectionId
-    ) {
-      try {
-        const tokens = await refreshAccessToken(stepDetails.connectionId, app);
-        result = await action.run({
-          metadata: input,
-          accessToken: tokens.access_token,
-        });
-      } catch (refreshError) {
-        logger.error('Error refreshing token: ' + refreshError);
-        return fail('Failed to refresh token');
-      }
-    }
-
-    if (!result.success) {
-      logger.error(`Action ${action.name} failed: ${result.message}`);
-      return fail(result.message || `Action ${action.name} failed`);
-    }
-
-    await finishExecutionStep(executionStepId, {
-      status: ExecutionStatus.COMPLETED,
-      message: result.message || `Action ${action.name} completed successfully`,
-      output: result.data,
-    });
-
-    await actionQueue.add(actionQueueName, {
-      workflowId,
-      executionId,
-      stepIndex: stepIndex + 1,
-    });
-  },
-  {
-    connection: redisConnection(),
-  },
+  'Action',
+  processActionJob,
 );
-
-actionWorker.on('completed', (job) => {
-  logger.info(`Job ${job.id} completed successfully`);
-});
-
-actionWorker.on('failed', (job, err) => {
-  logger.error(`Job ${job?.id} failed: ${err.message}`);
-});
-
-actionWorker.on('error', (err) => {
-  logger.error('Worker error: ' + err);
-});
-
-logger.info('Action Worker started');

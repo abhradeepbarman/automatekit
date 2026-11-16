@@ -1,7 +1,9 @@
-import { ExecutionStatus, StepType } from '@repo/common/types';
+import { ExecutionStatus, type StepType } from '@repo/common/types';
 import db from '@repo/db';
 import { executionSteps, executions, workflows } from '@repo/db/schema';
 import { eq } from 'drizzle-orm';
+
+type FinalStatus = ExecutionStatus.COMPLETED | ExecutionStatus.FAILED;
 
 interface StepInfo {
   id: string;
@@ -11,10 +13,10 @@ interface StepInfo {
   eventName: string;
 }
 
-export async function createExecution(
+export const createExecution = async (
   workflowId: string,
   triggerData: unknown,
-): Promise<string> {
+): Promise<string> => {
   const [execution] = await db
     .insert(executions)
     .values({ workflowId, status: ExecutionStatus.RUNNING, triggerData })
@@ -28,24 +30,24 @@ export async function createExecution(
     .where(eq(workflows.id, workflowId));
 
   return execution.id;
-}
+};
 
-export async function finishExecution(
+export const finishExecution = async (
   executionId: string,
-  status: ExecutionStatus.COMPLETED | ExecutionStatus.FAILED,
+  status: FinalStatus,
   error?: string,
-) {
+) => {
   await db
     .update(executions)
     .set({ status, error, finishedAt: new Date() })
     .where(eq(executions.id, executionId));
-}
+};
 
-export async function startExecutionStep(
+export const startExecutionStep = async (
   executionId: string,
   step: StepInfo,
-  input?: unknown,
-): Promise<string> {
+  input: unknown,
+): Promise<string> => {
   const [executionStep] = await db
     .insert(executionSteps)
     .values({
@@ -61,31 +63,28 @@ export async function startExecutionStep(
     .returning({ id: executionSteps.id });
 
   if (!executionStep) throw new Error('Failed to create execution step');
-  return executionStep.id;
-}
 
-export async function finishExecutionStep(
+  return executionStep.id;
+};
+
+export const finishExecutionStep = async (
   executionStepId: string,
-  result: {
-    status: ExecutionStatus.COMPLETED | ExecutionStatus.FAILED;
-    message?: string;
-    output?: unknown;
-  },
-) {
+  result: { status: FinalStatus; message?: string; output?: unknown },
+) => {
   await db
     .update(executionSteps)
     .set({ ...result, finishedAt: new Date() })
     .where(eq(executionSteps.id, executionStepId));
-}
+};
 
-export async function failExecution(
+export const failExecution = async (
   executionId: string,
   executionStepId: string,
   message: string,
-) {
+) => {
   await finishExecutionStep(executionStepId, {
     status: ExecutionStatus.FAILED,
     message,
   });
   await finishExecution(executionId, ExecutionStatus.FAILED, message);
-}
+};

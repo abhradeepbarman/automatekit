@@ -10,20 +10,20 @@ logger.info('Executor started');
 
 let shuttingDown = false;
 
-const shutdown = async (signal: string) => {
+const shutdown = async (signal: NodeJS.Signals) => {
   if (shuttingDown) return;
   shuttingDown = true;
 
-  logger.info(`Received ${signal}, shutting down executor...`);
+  logger.info(`Received ${signal}, shutting down executor`);
 
   try {
-    triggerChecker.stop();
+    await triggerChecker.stop();
     await Promise.all([actionWorker.close(), triggerWorker.close()]);
     await Promise.all([actionQueue.close(), triggerQueue.close()]);
     logger.info('Executor shut down cleanly');
     process.exit(0);
   } catch (error) {
-    logger.error('Error during shutdown: ' + error);
+    logger.error(`Executor shutdown failed: ${error}`);
     process.exit(1);
   }
 };
@@ -32,5 +32,5 @@ process.on('SIGTERM', () => void shutdown('SIGTERM'));
 process.on('SIGINT', () => void shutdown('SIGINT'));
 
 process.on('unhandledRejection', (reason) => {
-  logger.error('Unhandled rejection in executor: ' + reason);
+  logger.error(`Unhandled rejection: ${reason}`);
 });

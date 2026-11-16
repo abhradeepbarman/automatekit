@@ -8,7 +8,9 @@
     "dev": "cross-env NODE_OPTIONS=--conditions=development tsx watch --include \"../../packages/*/src/**\" src/index.ts",
     "build": "tsc",
     "db:generate": "cross-env NODE_OPTIONS=--conditions=development drizzle-kit generate",
-    "db:migrate": "drizzle-kit migrate"
+    "db:migrate": "drizzle-kit migrate",
+    "lint": "eslint src",
+    "check-types": "tsc --noEmit"
   },
   "keywords": [],
   "author": "",

@@ -6,7 +6,9 @@
   "scripts": {
     "start": "tsc && node dist/index.js",
     "dev": "cross-env NODE_OPTIONS=--conditions=development tsx watch --include \"../../packages/*/src/**\" src/index.ts",
-    "build": "tsc"
+    "build": "tsc",
+    "lint": "eslint src",
+    "check-types": "tsc --noEmit"
   },
   "keywords": [],
   "author": "",

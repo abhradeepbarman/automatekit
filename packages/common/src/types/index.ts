@@ -91,7 +91,7 @@ export interface ITrigger<TMeta = any> {
   schema?: z.ZodType;
   run: (params: {
     metadata: TMeta;
-    lastExecutedAt: Date;
+    lastExecutedAt: Date | null;
     accessToken?: string;
   }) => Promise<ReturnResponse> | ReturnResponse;
 }

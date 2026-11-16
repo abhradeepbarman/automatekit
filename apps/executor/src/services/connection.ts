@@ -1,29 +1,25 @@
-import { ConnectionCredentials, IApp, TokenResponse } from '@repo/common/types';
-import { decrypt, encrypt, type EncryptedData } from '@repo/common/utils';
+import type {
+  ConnectionCredentials,
+  IApp,
+  ReturnResponse,
+} from '@repo/common/types';
+import { decrypt, encrypt, logger } from '@repo/common/utils';
 import db from '@repo/db';
 import { connections } from '@repo/db/schema';
 import { eq } from 'drizzle-orm';
 
-export const getAccessToken = (connection: { credentials: EncryptedData }) =>
-  decrypt<ConnectionCredentials>(connection.credentials).accessToken ?? '';
+type Connection = typeof connections.$inferSelect;
 
-export async function refreshAccessToken(
-  connectionId: string,
+const getCredentials = (connection: Connection) =>
+  decrypt<ConnectionCredentials>(connection.credentials);
+
+export const refreshAccessToken = async (
+  connection: Connection,
   app: IApp,
-): Promise<TokenResponse> {
-  const connection = await db.query.connections.findFirst({
-    where: eq(connections.id, connectionId),
-  });
+): Promise<string> => {
+  if (!app.auth) throw new Error(`${app.name} has no auth`);
 
-  if (!connection) {
-    throw new Error('Connection not found');
-  }
-
-  if (!app.auth) {
-    throw new Error('App has no auth');
-  }
-
-  const credentials = decrypt<ConnectionCredentials>(connection.credentials);
+  const credentials = getCredentials(connection);
   if (!credentials.refreshToken) {
     throw new Error('Connection has no refresh token');
   }
@@ -42,7 +38,34 @@ export async function refreshAccessToken(
         ? new Date(Date.now() + tokens.expires_in * 1000)
         : null,
     })
-    .where(eq(connections.id, connectionId));
+    .where(eq(connections.id, connection.id));
 
-  return tokens;
-}
+  return tokens.access_token;
+};
+
+export const runWithAuth = async (
+  app: IApp,
+  connection: Connection | null,
+  run: (accessToken: string) => Promise<ReturnResponse> | ReturnResponse,
+): Promise<ReturnResponse> => {
+  if (!app.auth || !connection) return run('');
+
+  const result = await run(getCredentials(connection).accessToken ?? '');
+  if (result.success || result.statusCode !== 401) return result;
+
+  let accessToken: string;
+  try {
+    accessToken = await refreshAccessToken(connection, app);
+  } catch (error) {
+    logger.error(
+      `Token refresh failed for connection ${connection.id}: ${error}`,
+    );
+    return {
+      success: false,
+      statusCode: 401,
+      message: 'Failed to refresh token',
+    };
+  }
+
+  return run(accessToken);
+};
